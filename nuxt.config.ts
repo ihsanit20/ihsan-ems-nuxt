@@ -1,6 +1,26 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+// nuxt.config.ts
+
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  pages: true,
+  compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ['@nuxt/ui', '@nuxt/icon', '@nuxt/image']
-})
+  css: ["~/assets/css/main.css"],
+  modules: [
+    "@nuxt/ui",
+    "@nuxt/icon",
+    "@nuxt/image",
+    [
+      "@pinia/nuxt",
+      {
+        // ← টাপল: [module, options]
+        autoImports: ["defineStore", "storeToRefs"],
+      },
+    ],
+  ],
+
+  runtimeConfig: {
+    public: {
+      apiBase: "http://127.0.0.1:8000/api", // .env / .env.production এটাকে ওভাররাইড করবে
+    },
+  },
+});
