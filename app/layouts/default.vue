@@ -1,20 +1,23 @@
-<!-- app/layouts/default.vue -->
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 const store = useTenantStore();
 const { meta, status } = storeToRefs(store);
 const title = computed(() => meta.value?.name || "Ihsan EMS");
 </script>
 
 <template>
-  <div>
-    <header class="bg-red-600">
-      <!-- গার্ড: status ready না হলে একই জিনিস SSR/CSR-এ render হবে (এখানে blank নয়, একই fallback) -->
-      <strong v-if="status === 'ready'">{{ title }}</strong>
-      <strong v-else>Loading…</strong>
-    </header>
-    <main class="p-4">
+  <div class="min-h-screen grid grid-rows-[auto_1fr_auto]">
+    <SiteHeader />
+
+    <main class="px-4 py-6">
+      <div
+        v-if="status !== 'ready'"
+        class="mx-auto max-w-7xl text-sm opacity-70"
+      >
+        Loading tenant meta…
+      </div>
       <slot />
     </main>
+
+    <SiteFooter />
   </div>
 </template>
