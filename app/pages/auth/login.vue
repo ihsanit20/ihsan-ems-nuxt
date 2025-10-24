@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["guest"] });
+// definePageMeta({ middleware: ["guest"] });
 
 const auth = useAuthStore();
 const toast = useToast();
