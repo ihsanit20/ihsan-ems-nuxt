@@ -1,3 +1,5 @@
+// app/stores/tenant.ts
+
 import { defineStore } from "pinia";
 
 type TenantMeta = {
@@ -38,7 +40,7 @@ export const useTenantStore = defineStore("tenant", {
       this.status = "loading";
       const { $api } = useNuxtApp();
       try {
-        const data = await $api<TenantMeta>("/v1/tenant/meta");
+        const data = await $api<TenantMeta>("/v1/meta");
         this.meta = data;
         this.status = "ready";
       } catch (e: any) {
