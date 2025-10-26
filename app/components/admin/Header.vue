@@ -1,30 +1,4 @@
-<template>
-  <header
-    class="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60"
-  >
-    <div class="h-14 px-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <UButton
-          variant="ghost"
-          size="sm"
-          icon="i-heroicons-bars-3"
-          @click="$emit('toggleSidebar')"
-        />
-        <div class="flex items-center gap-2 font-semibold">
-          <img v-if="logo" :src="logo" alt="logo" class="h-6 w-auto" />
-          <span>{{ title }}</span>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <UBadge v-if="role" :label="role" />
-        <UDropdown :items="menu">
-          <UButton variant="ghost" icon="i-heroicons-user-circle" />
-        </UDropdown>
-      </div>
-    </div>
-  </header>
-</template>
+<!-- app/components/admin/Header.vue -->
 
 <script setup lang="ts">
 const emit = defineEmits<{ (e: "toggleSidebar"): void }>();
@@ -55,3 +29,31 @@ async function onLogout() {
   navigateTo("/auth/login");
 }
 </script>
+
+<template>
+  <header
+    class="border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60"
+  >
+    <div class="h-14 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <UButton
+          variant="ghost"
+          size="sm"
+          icon="i-heroicons-bars-3"
+          @click="$emit('toggleSidebar')"
+        />
+        <div class="flex items-center gap-2 font-semibold">
+          <img v-if="logo" :src="logo" alt="logo" class="h-6 w-auto" />
+          <span>{{ title }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <UBadge v-if="role" :label="role" />
+        <UDropdown :items="menu">
+          <UButton variant="ghost" icon="i-heroicons-user-circle" />
+        </UDropdown>
+      </div>
+    </div>
+  </header>
+</template>

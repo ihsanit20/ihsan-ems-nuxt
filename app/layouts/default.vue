@@ -1,3 +1,4 @@
+<!-- app/layouts/default.vue -->
 <script setup lang="ts">
 const store = useTenantStore();
 const { meta, status } = storeToRefs(store);
@@ -6,7 +7,7 @@ const title = computed(() => meta.value?.name || "Ihsan EMS");
 
 <template>
   <div class="min-h-screen grid grid-rows-[auto_1fr_auto]">
-    <SiteHeader />
+    <PublicHeader />
 
     <main class="px-4 py-6">
       <div
@@ -18,6 +19,6 @@ const title = computed(() => meta.value?.name || "Ihsan EMS");
       <slot />
     </main>
 
-    <SiteFooter />
+    <PublicFooter />
   </div>
 </template>

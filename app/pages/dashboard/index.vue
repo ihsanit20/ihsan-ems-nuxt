@@ -1,3 +1,32 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: "admin",
+  middleware: ["auth"],
+});
+const auth = useAuthStore();
+const tenantStore = useTenantStore();
+const { meta: tenant, status: metaStatus } = storeToRefs(tenantStore);
+
+const toast = useToast();
+const tenantStatus = computed(() =>
+  metaStatus.value === "ready" ? "ready" : metaStatus.value
+);
+
+const refresh = async () => {
+  try {
+    await auth.fetchMe();
+    toast.add({ title: "Refreshed" });
+  } catch {
+    // ignore
+  }
+};
+
+const onLogout = async () => {
+  await auth.logout();
+  return navigateTo("/auth/login");
+};
+</script>
+
 <template>
   <div class="p-4 md:p-8 space-y-6">
     <div class="flex items-center justify-between">
@@ -51,8 +80,8 @@
         <template #header>Quick links</template>
         <ul class="list-disc pl-5 space-y-1">
           <li><NuxtLink to="/">Home</NuxtLink></li>
-          <li><NuxtLink to="/admin/classes">Classes (stub)</NuxtLink></li>
-          <li><NuxtLink to="/admin/students">Students (stub)</NuxtLink></li>
+          <!-- <li><NuxtLink to="/admin/classes">Classes (stub)</NuxtLink></li>
+          <li><NuxtLink to="/admin/students">Students (stub)</NuxtLink></li> -->
         </ul>
       </UCard>
 
@@ -74,28 +103,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const auth = useAuthStore();
-const tenantStore = useTenantStore();
-const { meta: tenant, status: metaStatus } = storeToRefs(tenantStore);
-
-const toast = useToast();
-const tenantStatus = computed(() =>
-  metaStatus.value === "ready" ? "ready" : metaStatus.value
-);
-
-const refresh = async () => {
-  try {
-    await auth.fetchMe();
-    toast.add({ title: "Refreshed" });
-  } catch {
-    // ignore
-  }
-};
-
-const onLogout = async () => {
-  await auth.logout();
-  return navigateTo("/auth/login");
-};
-</script>

@@ -1,3 +1,16 @@
+<!-- app/components/public/Header.vue -->
+<script setup lang="ts">
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
+
+const { meta } = storeToRefs(useTenantStore());
+
+const title = computed(
+  () => meta.value?.shortName || meta.value?.name || "Ihsan EMS"
+);
+const logo = computed(() => meta.value?.branding?.logoUrl || "");
+</script>
+
 <template>
   <header
     class="w-full border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60"
@@ -18,15 +31,3 @@
     </div>
   </header>
 </template>
-
-<script setup lang="ts">
-import { computed } from "vue";
-import { storeToRefs } from "pinia";
-
-const { meta } = storeToRefs(useTenantStore());
-
-const title = computed(
-  () => meta.value?.shortName || meta.value?.name || "Ihsan EMS"
-);
-const logo = computed(() => meta.value?.branding?.logoUrl || "");
-</script>

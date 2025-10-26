@@ -1,3 +1,10 @@
+<!-- app/components/public/Footer.vue -->
+
+<script setup lang="ts">
+const tenant = storeToRefs(useTenantStore()).meta;
+const title = computed(() => tenant.value?.name || "Ihsan EMS");
+</script>
+
 <template>
   <footer class="mt-10 border-t">
     <div
@@ -13,8 +20,3 @@
     </div>
   </footer>
 </template>
-
-<script setup lang="ts">
-const tenant = storeToRefs(useTenantStore()).meta;
-const title = computed(() => tenant.value?.name || "Ihsan EMS");
-</script>

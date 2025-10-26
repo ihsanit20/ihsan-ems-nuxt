@@ -1,3 +1,9 @@
+<!-- app/components/admin/Sidebar.vue -->
+
+<script setup lang="ts">
+defineProps<{ collapsed: boolean }>();
+</script>
+
 <template>
   <aside
     class="border-r bg-white/50 backdrop-blur supports-[backdrop-filter]:bg-white/40"
@@ -43,7 +49,3 @@
     </nav>
   </aside>
 </template>
-
-<script setup lang="ts">
-defineProps<{ collapsed: boolean }>();
-</script>
