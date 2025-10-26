@@ -20,9 +20,13 @@
 </template>
 
 <script setup lang="ts">
-const tenant = storeToRefs(useTenantStore()).meta;
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
+
+const { meta } = storeToRefs(useTenantStore());
+
 const title = computed(
-  () => tenant.value?.shortName || tenant.value?.name || "Ihsan EMS"
+  () => meta.value?.shortName || meta.value?.name || "Ihsan EMS"
 );
-const logo = computed(() => tenant.value?.branding?.logoUrl || "");
+const logo = computed(() => meta.value?.branding?.logoUrl || "");
 </script>

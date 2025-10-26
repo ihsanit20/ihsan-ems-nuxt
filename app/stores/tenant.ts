@@ -1,8 +1,7 @@
 // app/stores/tenant.ts
-
 import { defineStore } from "pinia";
 
-type TenantMeta = {
+export type TenantMeta = {
   id: number;
   domain: string;
   name: string;
@@ -12,6 +11,7 @@ type TenantMeta = {
     faviconUrl?: string | null;
     primaryColor?: string;
     secondaryColor?: string;
+    version?: string | null;
   };
   locale: {
     default: string;
@@ -34,13 +34,25 @@ export const useTenantStore = defineStore("tenant", {
     status: "idle" as "idle" | "loading" | "ready" | "error",
     error: "" as string | "",
   }),
+  getters: {
+    title(state): string {
+      return state.meta?.shortName || state.meta?.name || "Ihsan EMS";
+    },
+    logo(state): string {
+      return state.meta?.branding?.logoUrl || "";
+    },
+    favicon(state): string {
+      return state.meta?.branding?.faviconUrl || "";
+    },
+  },
   actions: {
     async fetchMeta() {
       if (this.status === "loading" || this.status === "ready") return;
       this.status = "loading";
-      const { $api } = useNuxtApp();
+      const { $publicApi } = useNuxtApp();
       try {
-        const data = await $api<TenantMeta>("/v1/meta");
+        // ✅ server route: /api/v1/tenant/meta  (nuxt runtime apiBase ends with /api)
+        const data = await $publicApi<TenantMeta>("/v1/tenant/meta");
         this.meta = data;
         this.status = "ready";
       } catch (e: any) {

@@ -21,7 +21,7 @@ export default defineNuxtPlugin(() => {
     try {
       const c = useCookie<string>("auth_token", {
         sameSite: "lax",
-        secure: !import.meta.dev, // Vite flag; no @types/node needed
+        secure: !import.meta.dev,
         httpOnly: false,
         path: "/",
       });
@@ -31,16 +31,15 @@ export default defineNuxtPlugin(() => {
     }
   };
 
-  // Normalize headers to a Headers instance and attach tenant (and optional ?tenant)
+  // Normalize headers and attach tenant (and ?tenant)
   const attachTenant = (options: { headers?: HeadersInit; query?: any }) => {
     const tenantHost = resolveTenant();
 
-    // Always work with a Headers instance
     const h = new Headers(options.headers as HeadersInit | undefined);
     if (tenantHost) h.set("X-Tenant-Domain", tenantHost);
-    options.headers = h; // <-- keep as Headers to satisfy TS
+    h.set("Accept", "application/json");
+    options.headers = h;
 
-    // Optional DEV fallback via query (?tenant=host)
     const q = (options.query ||= {});
     if (tenantHost && (q as any).tenant == null) {
       (options.query as any).tenant = tenantHost;
@@ -49,7 +48,7 @@ export default defineNuxtPlugin(() => {
 
   // ---------- $publicApi: NO Authorization ----------
   const $publicApi = $fetch.create({
-    baseURL: apiBase,
+    baseURL: apiBase, // e.g. http://127.0.0.1:8000/api
     credentials: "omit",
     onRequest({ options }) {
       attachTenant(options as any);
@@ -59,7 +58,7 @@ export default defineNuxtPlugin(() => {
   // ---------- $api: Authorization (Bearer) + Tenant ----------
   const $api = $fetch.create({
     baseURL: apiBase,
-    credentials: "omit", // If you switch to BFF, change to 'include'
+    credentials: "omit", // If BFF, change to 'include'
     onRequest({ options }) {
       attachTenant(options as any);
 
@@ -67,7 +66,7 @@ export default defineNuxtPlugin(() => {
       if (token) {
         const h = new Headers(options.headers as HeadersInit | undefined);
         h.set("Authorization", `Bearer ${token}`);
-        options.headers = h; // keep as Headers
+        options.headers = h;
       }
     },
   });
