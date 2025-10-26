@@ -7,6 +7,7 @@ type AuthUser = {
   phone?: string | null;
   email?: string | null;
   role?: string | null;
+  photo?: string | null;
 };
 
 type AuthState = {

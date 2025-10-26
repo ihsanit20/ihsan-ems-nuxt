@@ -1,51 +1,158 @@
 <!-- app/components/admin/Sidebar.vue -->
-
 <script setup lang="ts">
-defineProps<{ collapsed: boolean }>();
+import type { NavigationMenuItem } from "@nuxt/ui";
+
+const { meta: tenant } = storeToRefs(useTenantStore());
+const auth = useAuthStore();
+
+const logo = computed(() => tenant.value?.branding?.logoUrl || "");
+const title = computed(
+  () => tenant.value?.shortName || tenant.value?.name || "Ihsan EMS"
+);
+
+const itemsPrimary = computed<NavigationMenuItem[]>(() => [
+  {
+    label: "Dashboard",
+    icon: "i-lucide-layout-dashboard",
+    to: "/dashboard",
+    exact: true,
+  },
+  {
+    label: "Setup",
+    icon: "i-lucide-settings",
+    defaultOpen: true,
+    children: [
+      { label: "Institute Profile", to: "/admin/setup/institute" },
+      { label: "Academic Structure", to: "/admin/setup/academics" },
+      { label: "Fee Heads", to: "/admin/setup/fees" },
+      { label: "Payment Methods", to: "/admin/setup/payments" },
+    ],
+  },
+  {
+    label: "Admission",
+    icon: "i-lucide-badge-plus",
+    children: [
+      { label: "New Admission", to: "/admin/admission" },
+      { label: "Students", to: "/admin/students" },
+      { label: "Imports", to: "/admin/students/imports" },
+    ],
+  },
+  {
+    label: "Attendance",
+    icon: "i-lucide-check-square",
+    children: [
+      { label: "Students", to: "/admin/attendance/students" },
+      { label: "Staff", to: "/admin/attendance/staff" },
+    ],
+  },
+  {
+    label: "Fees",
+    icon: "i-lucide-banknote",
+    children: [
+      { label: "Collect Fees", to: "/admin/fees/collect" },
+      { label: "Due List", to: "/admin/fees/due" },
+      { label: "Student Ledger", to: "/admin/fees/ledger" },
+    ],
+  },
+  {
+    label: "Exams",
+    icon: "i-lucide-clipboard-list",
+    children: [
+      { label: "Marks Entry", to: "/admin/exams/marks" },
+      { label: "Result Sheet", to: "/admin/exams/results" },
+    ],
+  },
+  {
+    label: "Reports",
+    icon: "i-lucide-bar-chart-3",
+    children: [
+      { label: "Admission", to: "/admin/reports/admission" },
+      { label: "Attendance", to: "/admin/reports/attendance" },
+      { label: "Fees", to: "/admin/reports/fees" },
+      { label: "Exams", to: "/admin/reports/exams" },
+    ],
+  },
+]);
+
+const itemsSecondary = computed<NavigationMenuItem[]>(() => [
+  {
+    label: "Help & Support",
+    icon: "i-lucide-info",
+    to: "https://github.com/nuxt/ui",
+    target: "_blank",
+  },
+]);
 </script>
 
 <template>
-  <aside
-    class="border-r bg-white/50 backdrop-blur supports-[backdrop-filter]:bg-white/40"
-    :class="collapsed ? 'w-14' : 'w-64'"
+  <UDashboardSidebar
+    resizable
+    collapsible
+    :min-size="220"
+    :default-size="280"
+    :max-size="420"
+    :collapsed-size="64"
+    :ui="{ footer: 'border-t border-default' }"
   >
-    <nav class="p-3 space-y-1">
-      <NuxtLink
-        class="block px-3 py-2 rounded hover:bg-gray-50"
+    <!-- Header -->
+    <template #header="{ collapsed }">
+      <div class="flex items-center gap-2 px-1">
+        <img
+          v-if="!collapsed && logo"
+          :src="logo"
+          :alt="title"
+          class="h-5 w-auto shrink-0"
+        />
+        <UIcon
+          v-else
+          name="i-lucide-school"
+          class="size-5 text-primary mx-auto"
+        />
+        <span v-if="!collapsed" class="truncate text-sm font-semibold">{{
+          title
+        }}</span>
+      </div>
+      <UDashboardSidebarCollapse class="hidden md:inline-flex mr-1" />
+    </template>
+
+    <!-- Body -->
+    <template #default="{ collapsed }">
+      <UDashboardSearchButton />
+      <UNavigationMenu
+        :collapsed="collapsed"
+        :items="itemsPrimary"
+        orientation="vertical"
+        class="mt-2"
+      />
+      <UNavigationMenu
+        :collapsed="collapsed"
+        :items="itemsSecondary"
+        orientation="vertical"
+        class="mt-auto"
+      />
+    </template>
+
+    <!-- Footer -->
+    <template #footer="{ collapsed }">
+      <UButton
+        :avatar="auth.user ? { alt: auth.user.name } : undefined"
+        :label="collapsed ? undefined : auth.user?.name || 'Profile'"
+        color="neutral"
+        variant="ghost"
+        class="w-full"
+        :block="collapsed"
         to="/dashboard"
-      >
-        <span class="inline-flex items-center gap-2">
-          <UIcon name="i-heroicons-home" />
-          <span v-if="!collapsed">Dashboard</span>
-        </span>
-      </NuxtLink>
-      <!-- <NuxtLink
-        class="block px-3 py-2 rounded hover:bg-gray-50"
-        to="/admin/classes"
-      >
-        <span class="inline-flex items-center gap-2">
-          <UIcon name="i-heroicons-academic-cap" />
-          <span v-if="!collapsed">Classes</span>
-        </span>
-      </NuxtLink> -->
-      <!-- <NuxtLink
-        class="block px-3 py-2 rounded hover:bg-gray-50"
-        to="/admin/students"
-      >
-        <span class="inline-flex items-center gap-2">
-          <UIcon name="i-heroicons-user-group" />
-          <span v-if="!collapsed">Students</span>
-        </span>
-      </NuxtLink> -->
-      <!-- <NuxtLink
-        class="block px-3 py-2 rounded hover:bg-gray-50"
-        to="/admin/fees"
-      >
-        <span class="inline-flex items-center gap-2">
-          <UIcon name="i-heroicons-banknotes" />
-          <span v-if="!collapsed">Fees</span>
-        </span>
-      </NuxtLink> -->
-    </nav>
-  </aside>
+      />
+    </template>
+
+    <!-- Resize handle: দৃশ্যমান ও ক্লিকেবল (প্যানেলের উপরেও থাকবে) -->
+    <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
+      <UDashboardResizeHandle
+        class="relative z-20 w-2 cursor-col-resize hover:bg-(--ui-border-accented) transition"
+        @mousedown="onMouseDown"
+        @touchstart="onTouchStart"
+        @dblclick="onDoubleClick"
+      />
+    </template>
+  </UDashboardSidebar>
 </template>
