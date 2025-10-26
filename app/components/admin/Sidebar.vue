@@ -96,23 +96,39 @@ const itemsSecondary = computed<NavigationMenuItem[]>(() => [
   >
     <!-- Header -->
     <template #header="{ collapsed }">
-      <div class="flex items-center gap-2 px-1">
-        <img
-          v-if="!collapsed && logo"
-          :src="logo"
-          :alt="title"
-          class="h-5 w-auto shrink-0"
-        />
-        <UIcon
+      <div class="relative h-10 px-2 w-full min-w-0">
+        <!-- Expanded: logo left, collapse right -->
+        <div
+          v-if="!collapsed"
+          class="flex w-full h-full items-center justify-between"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <img
+              v-if="logo"
+              :src="logo"
+              :alt="title"
+              class="size-5 w-auto shrink-0"
+            />
+          </div>
+          <UDashboardSidebarCollapse
+            aria-label="Collapse sidebar"
+            class="inline-flex"
+          />
+        </div>
+
+        <!-- Collapsed: center logo + full overlay button to expand -->
+        <div
           v-else
-          name="i-lucide-school"
-          class="size-5 text-primary mx-auto"
-        />
-        <span v-if="!collapsed" class="truncate text-sm font-semibold">{{
-          title
-        }}</span>
+          class="relative flex w-full h-full items-center justify-center"
+        >
+          <img v-if="logo" :src="logo" :alt="title" class="h-5 w-auto" />
+          <!-- পুরো হেডার এলাকা ক্লিক করলে expand -->
+          <UDashboardSidebarCollapse
+            aria-label="Expand sidebar"
+            class="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </div>
       </div>
-      <UDashboardSidebarCollapse class="hidden md:inline-flex mr-1" />
     </template>
 
     <!-- Body -->
@@ -145,7 +161,7 @@ const itemsSecondary = computed<NavigationMenuItem[]>(() => [
       />
     </template>
 
-    <!-- Resize handle: দৃশ্যমান ও ক্লিকেবল (প্যানেলের উপরেও থাকবে) -->
+    <!-- Resize handle (visible & easy to grab) -->
     <template #resize-handle="{ onMouseDown, onTouchStart, onDoubleClick }">
       <UDashboardResizeHandle
         class="relative z-20 w-2 cursor-col-resize hover:bg-(--ui-border-accented) transition"
