@@ -13,7 +13,7 @@
           <span v-if="!collapsed">Dashboard</span>
         </span>
       </NuxtLink>
-      <NuxtLink
+      <!-- <NuxtLink
         class="block px-3 py-2 rounded hover:bg-gray-50"
         to="/admin/classes"
       >
@@ -21,8 +21,8 @@
           <UIcon name="i-heroicons-academic-cap" />
           <span v-if="!collapsed">Classes</span>
         </span>
-      </NuxtLink>
-      <NuxtLink
+      </NuxtLink> -->
+      <!-- <NuxtLink
         class="block px-3 py-2 rounded hover:bg-gray-50"
         to="/admin/students"
       >
@@ -30,8 +30,8 @@
           <UIcon name="i-heroicons-user-group" />
           <span v-if="!collapsed">Students</span>
         </span>
-      </NuxtLink>
-      <NuxtLink
+      </NuxtLink> -->
+      <!-- <NuxtLink
         class="block px-3 py-2 rounded hover:bg-gray-50"
         to="/admin/fees"
       >
@@ -39,7 +39,7 @@
           <UIcon name="i-heroicons-banknotes" />
           <span v-if="!collapsed">Fees</span>
         </span>
-      </NuxtLink>
+      </NuxtLink> -->
     </nav>
   </aside>
 </template>
