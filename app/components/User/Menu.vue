@@ -15,7 +15,11 @@ async function onLogout() {
 
 const items = computed<DropdownMenuItem[]>(() => [
   { label: "Home", icon: "i-lucide-home", to: "/" },
-  { label: "Dashboard", icon: "i-lucide-layout-dashboard", to: "/dashboard" },
+  {
+    label: "Dashboard",
+    icon: "i-lucide-layout-dashboard",
+    to: "/admin/dashboard",
+  },
   { label: "Logout", icon: "i-lucide-log-out", onSelect: onLogout },
 ]);
 </script>

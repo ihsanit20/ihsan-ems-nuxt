@@ -33,7 +33,7 @@ const onSubmit = async () => {
     await auth.login(email.value || phone.value, password.value);
     await auth.fetchMe();
     toast.add({ title: "Account created!" });
-    return navigateTo("/dashboard");
+    return navigateTo("/admin/dashboard");
   } catch (e: any) {
     error.value =
       e?.data?.message || e?.data?.error || e?.message || "Registration failed";

@@ -14,62 +14,64 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
   {
     label: "Dashboard",
     icon: "i-lucide-layout-dashboard",
-    to: "/dashboard",
+    to: "/admin/dashboard",
     exact: true,
   },
+
+  // {
+  //   label: "Admission",
+  //   icon: "i-lucide-badge-plus",
+  //   children: [
+  //     { label: "New Admission", to: "/admin/admission" },
+  //     { label: "Students", to: "/admin/students" },
+  //     { label: "Imports", to: "/admin/students/imports" },
+  //   ],
+  // },
+  // {
+  //   label: "Attendance",
+  //   icon: "i-lucide-check-square",
+  //   children: [
+  //     { label: "Students", to: "/admin/attendance/students" },
+  //     { label: "Staff", to: "/admin/attendance/staff" },
+  //   ],
+  // },
+  // {
+  //   label: "Fees",
+  //   icon: "i-lucide-banknote",
+  //   children: [
+  //     { label: "Collect Fees", to: "/admin/fees/collect" },
+  //     { label: "Due List", to: "/admin/fees/due" },
+  //     { label: "Student Ledger", to: "/admin/fees/ledger" },
+  //   ],
+  // },
+  // {
+  //   label: "Exams",
+  //   icon: "i-lucide-clipboard-list",
+  //   children: [
+  //     { label: "Marks Entry", to: "/admin/exams/marks" },
+  //     { label: "Result Sheet", to: "/admin/exams/results" },
+  //   ],
+  // },
+  // {
+  //   label: "Reports",
+  //   icon: "i-lucide-bar-chart-3",
+  //   children: [
+  //     { label: "Admission", to: "/admin/reports/admission" },
+  //     { label: "Attendance", to: "/admin/reports/attendance" },
+  //     { label: "Fees", to: "/admin/reports/fees" },
+  //     { label: "Exams", to: "/admin/reports/exams" },
+  //   ],
+  // },
+
   {
     label: "Setup",
     icon: "i-lucide-settings",
     defaultOpen: true,
     children: [
-      { label: "Institute Profile", to: "/admin/setup/institute" },
-      { label: "Academic Structure", to: "/admin/setup/academics" },
-      { label: "Fee Heads", to: "/admin/setup/fees" },
-      { label: "Payment Methods", to: "/admin/setup/payments" },
-    ],
-  },
-  {
-    label: "Admission",
-    icon: "i-lucide-badge-plus",
-    children: [
-      { label: "New Admission", to: "/admin/admission" },
-      { label: "Students", to: "/admin/students" },
-      { label: "Imports", to: "/admin/students/imports" },
-    ],
-  },
-  {
-    label: "Attendance",
-    icon: "i-lucide-check-square",
-    children: [
-      { label: "Students", to: "/admin/attendance/students" },
-      { label: "Staff", to: "/admin/attendance/staff" },
-    ],
-  },
-  {
-    label: "Fees",
-    icon: "i-lucide-banknote",
-    children: [
-      { label: "Collect Fees", to: "/admin/fees/collect" },
-      { label: "Due List", to: "/admin/fees/due" },
-      { label: "Student Ledger", to: "/admin/fees/ledger" },
-    ],
-  },
-  {
-    label: "Exams",
-    icon: "i-lucide-clipboard-list",
-    children: [
-      { label: "Marks Entry", to: "/admin/exams/marks" },
-      { label: "Result Sheet", to: "/admin/exams/results" },
-    ],
-  },
-  {
-    label: "Reports",
-    icon: "i-lucide-bar-chart-3",
-    children: [
-      { label: "Admission", to: "/admin/reports/admission" },
-      { label: "Attendance", to: "/admin/reports/attendance" },
-      { label: "Fees", to: "/admin/reports/fees" },
-      { label: "Exams", to: "/admin/reports/exams" },
+      { label: "ইউজার তালিকা", to: "/admin/setup/users" },
+      // { label: "Academic Structure", to: "/admin/setup/academics" },
+      // { label: "Fee Heads", to: "/admin/setup/fees" },
+      // { label: "Payment Methods", to: "setup/payments" },
     ],
   },
 ]);
@@ -157,7 +159,7 @@ const itemsSecondary = computed<NavigationMenuItem[]>(() => [
         variant="ghost"
         class="w-full"
         :block="collapsed"
-        to="/dashboard"
+        to="/admin/dashboard"
       />
     </template>
 

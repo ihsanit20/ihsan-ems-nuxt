@@ -16,7 +16,7 @@ const onSubmit = async () => {
     await auth.login(identifier.value, password.value);
     await auth.fetchMe();
     toast.add({ title: "Welcome back!" });
-    return navigateTo("/dashboard");
+    return navigateTo("/admin/dashboard");
   } catch (e) {
     // auth.store already set error
   }
