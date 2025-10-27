@@ -9,8 +9,19 @@ const title = computed(
   () => meta.value?.shortName || meta.value?.name || "Ihsan EMS"
 );
 const logo = computed(() => meta.value?.branding?.logoUrl || "");
+
+// সরাসরি user truthy চেক
+const user = computed(() => auth.user);
 const role = computed(() => auth.user?.role || "");
-const isAuthed = computed(() => !!auth.user);
+const userData = computed(() => ({
+  name: auth.user?.name,
+  photo: auth.user?.photo,
+}));
+
+async function onLogout() {
+  await auth.logout?.();
+  navigateTo("/auth/login");
+}
 </script>
 
 <template>
@@ -23,7 +34,8 @@ const isAuthed = computed(() => !!auth.user);
         <span>{{ title }}</span>
       </NuxtLink>
 
-      <nav v-if="!isAuthed" class="hidden md:flex items-center gap-6 text-sm">
+      <!-- guest -->
+      <nav v-if="!user" class="hidden md:flex items-center gap-6 text-sm">
         <NuxtLink to="/" class="hover:underline">Home</NuxtLink>
         <NuxtLink to="/auth/login" class="hover:underline">Login</NuxtLink>
         <NuxtLink to="/auth/register" class="hover:underline"
@@ -31,9 +43,9 @@ const isAuthed = computed(() => !!auth.user);
         >
       </nav>
 
+      <!-- authed -->
       <div v-else class="hidden md:flex items-center gap-2">
-        <UBadge v-if="role" :label="role" />
-        <UserMenu />
+        <UserMenu :user="userData" :on-logout="onLogout" />
       </div>
     </div>
   </header>

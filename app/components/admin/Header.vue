@@ -1,5 +1,8 @@
-<!-- app/components/admin/Header.vue -->
+<!-- app/components/AdminHeader.vue -->
 <script setup lang="ts">
+import { computed } from "vue";
+import { storeToRefs } from "pinia";
+
 const { meta: tenant } = storeToRefs(useTenantStore());
 const auth = useAuthStore();
 
@@ -7,6 +10,16 @@ const title = computed(
   () => tenant.value?.shortName || tenant.value?.name || "Ihsan EMS"
 );
 const logo = computed(() => tenant.value?.branding?.logoUrl || "");
+
+const userData = computed(() => ({
+  name: auth.user?.name,
+  photo: auth.user?.photo,
+}));
+
+async function onLogout() {
+  await auth.logout?.();
+  navigateTo("/auth/login");
+}
 </script>
 
 <template>
@@ -19,7 +32,7 @@ const logo = computed(() => tenant.value?.branding?.logoUrl || "");
     </template>
 
     <template #right>
-      <UserMenu />
+      <UserMenu :user="userData" :on-logout="onLogout" />
     </template>
   </UDashboardNavbar>
 </template>

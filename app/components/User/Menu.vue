@@ -1,3 +1,4 @@
+<!-- app/components/UserMenu.vue -->
 <script setup lang="ts">
 import type { DropdownMenuItem } from "@nuxt/ui";
 
@@ -15,7 +16,7 @@ async function onLogout() {
 const items = computed<DropdownMenuItem[]>(() => [
   { label: "Home", icon: "i-lucide-home", to: "/" },
   { label: "Dashboard", icon: "i-lucide-layout-dashboard", to: "/dashboard" },
-  { label: "Logout", icon: "i-lucide-log-out", action: onLogout },
+  { label: "Logout", icon: "i-lucide-log-out", onSelect: onLogout },
 ]);
 </script>
 
