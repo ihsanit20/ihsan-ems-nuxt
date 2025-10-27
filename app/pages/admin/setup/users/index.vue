@@ -361,28 +361,22 @@ const columns: TableColumn<Row>[] = [
 
     <!-- Delete Confirm -->
     <UModal v-model:open="confirmOpen">
-      <UCard>
-        <template #header
-          ><div class="font-semibold">Delete user</div></template
-        >
-        <p v-if="deleting">
-          Are you sure you want to delete <b>{{ deleting.name }}</b
-          >?
-        </p>
-        <template #footer>
-          <div class="flex items-center justify-end gap-2">
-            <UButton variant="ghost" @click="confirmOpen = false"
-              >Cancel</UButton
-            >
-            <UButton
-              color="error"
-              :loading="store.removing"
-              @click="confirmDelete"
-              >Delete</UButton
-            >
-          </div>
-        </template>
-      </UCard>
+      <template #header><div class="font-semibold">Delete user</div></template>
+      <p v-if="deleting">
+        Are you sure you want to delete <b>{{ deleting.name }}</b
+        >?
+      </p>
+      <template #footer>
+        <div class="flex items-center justify-end gap-2">
+          <UButton variant="ghost" @click="confirmOpen = false">Cancel</UButton>
+          <UButton
+            color="error"
+            :loading="store.removing"
+            @click="confirmDelete"
+            >Delete</UButton
+          >
+        </div>
+      </template>
     </UModal>
   </div>
 </template>
