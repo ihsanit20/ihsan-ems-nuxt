@@ -68,7 +68,7 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     icon: "i-lucide-settings",
     defaultOpen: true,
     children: [
-      { label: "ইউজার তালিকা", to: "/admin/setup/users" },
+      { label: "User Management", to: "/admin/setup/users" },
       // { label: "Academic Structure", to: "/admin/setup/academics" },
       // { label: "Fee Heads", to: "/admin/setup/fees" },
       // { label: "Payment Methods", to: "setup/payments" },
