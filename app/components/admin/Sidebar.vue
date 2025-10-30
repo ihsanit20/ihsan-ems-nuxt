@@ -69,7 +69,7 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     defaultOpen: true,
     children: [
       { label: "User Management", to: "/admin/setup/users" },
-      // { label: "Academic Structure", to: "/admin/setup/academics" },
+      { label: "Institute Setup", to: "/admin/setup/institute" },
       // { label: "Fee Heads", to: "/admin/setup/fees" },
       // { label: "Payment Methods", to: "setup/payments" },
     ],
