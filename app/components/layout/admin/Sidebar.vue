@@ -70,7 +70,7 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     children: [
       { label: "User Management", to: "/admin/setup/users" },
       { label: "Institute Setup", to: "/admin/setup/institute" },
-      // { label: "Fee Heads", to: "/admin/setup/fees" },
+      { label: "Session Setup", to: "/admin/setup/sessions" },
       // { label: "Payment Methods", to: "setup/payments" },
     ],
   },
@@ -91,7 +91,7 @@ const itemsSecondary = computed<NavigationMenuItem[]>(() => [
     resizable
     collapsible
     :min-size="220"
-    :default-size="280"
+    :default-size="318"
     :max-size="420"
     :collapsed-size="64"
     :ui="{ footer: 'border-t border-default' }"

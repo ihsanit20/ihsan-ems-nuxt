@@ -29,21 +29,38 @@ const ENDPOINT = "/v1/institute/profile";
 
 /* ---------- Store ---------- */
 export const useInstituteStore = defineStore("institute", {
-  state: () => ({
-    profile: null as InstituteProfile | null,
-    loading: false,
-    saving: false,
-    error: "" as string,
-  }),
+  state: () => {
+    const profileFromCookie =
+      useCookie<InstituteProfile | null>("institute_profile").value ?? null;
+    return {
+      profile: profileFromCookie as InstituteProfile | null,
+      loading: false,
+      saving: false,
+      error: "" as string,
+    };
+  },
 
   actions: {
-    async fetchProfile() {
-      const { $api } = useNuxtApp();
+    async fetchProfile(force = false) {
+      if (this.loading) return this.profile;
+
+      // ✅ Cookie cache (SSR-safe), 12h TTL
+      const cookie = useCookie<InstituteProfile | null>("institute_profile", {
+        maxAge: 60 * 60 * 12, // seconds
+        sameSite: "lax",
+      });
+
+      if (!force && cookie.value) {
+        this.profile = cookie.value;
+        return this.profile;
+      }
+
       this.loading = true;
       this.error = "";
       try {
-        const res = await $api<InstituteProfile>(ENDPOINT);
-        // Normalize minimal shape
+        const { $api } = useNuxtApp();
+        const res = await $api<InstituteProfile>("/v1/institute/profile");
+
         const contact: InstituteContact = {
           address: res?.contact?.address ?? "",
           phone: res?.contact?.phone ?? null,
@@ -51,10 +68,9 @@ export const useInstituteStore = defineStore("institute", {
           website: res?.contact?.website ?? null,
           social: res?.contact?.social ?? null,
         };
-        this.profile = {
-          names: res?.names ?? null,
-          contact,
-        };
+
+        this.profile = { names: res?.names ?? null, contact };
+        cookie.value = this.profile; // ✅ cache write
         return this.profile;
       } catch (e: any) {
         this.error =
@@ -72,15 +88,15 @@ export const useInstituteStore = defineStore("institute", {
       names?: InstituteNames | null;
       contact: InstituteContact; // contact.address required per API
     }) {
-      const { $api } = useNuxtApp();
       this.saving = true;
       this.error = "";
       try {
-        const updated = await $api<InstituteProfile>(ENDPOINT, {
-          method: "PATCH", // matches Route::match(['put','patch'], ...)
+        const { $api } = useNuxtApp();
+        const updated = await $api<InstituteProfile>("/v1/institute/profile", {
+          method: "PATCH",
           body: payload,
         });
-        // Normalize
+
         const contact: InstituteContact = {
           address: updated?.contact?.address ?? "",
           phone: updated?.contact?.phone ?? null,
@@ -88,10 +104,16 @@ export const useInstituteStore = defineStore("institute", {
           website: updated?.contact?.website ?? null,
           social: updated?.contact?.social ?? null,
         };
-        this.profile = {
-          names: updated?.names ?? null,
-          contact,
-        };
+
+        this.profile = { names: updated?.names ?? null, contact };
+
+        // ✅ Cookie update so footer/public pages get the latest immediately
+        const cookie = useCookie<InstituteProfile | null>("institute_profile", {
+          maxAge: 60 * 60 * 12,
+          sameSite: "lax",
+        });
+        cookie.value = this.profile;
+
         return this.profile;
       } catch (e: any) {
         this.error =

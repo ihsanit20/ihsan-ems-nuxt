@@ -46,15 +46,29 @@ export const useTenantStore = defineStore("tenant", {
     },
   },
   actions: {
-    async fetchMeta() {
-      if (this.status === "loading" || this.status === "ready") return;
+    async fetchMeta(force = false) {
+      if (this.status === "loading") return this.meta;
+
+      // ✅ Cookie cache (SSR-safe), 12h TTL
+      const cookie = useCookie<TenantMeta | null>("tenant_meta", {
+        maxAge: 60 * 60 * 12, // seconds
+        sameSite: "lax",
+      });
+
+      if (!force && cookie.value) {
+        this.meta = cookie.value;
+        this.status = "ready";
+        return this.meta;
+      }
+
       this.status = "loading";
       const { $publicApi } = useNuxtApp();
       try {
-        // ✅ server route: /api/v1/tenant/meta  (nuxt runtime apiBase ends with /api)
         const data = await $publicApi<TenantMeta>("/v1/tenant/meta");
         this.meta = data;
+        cookie.value = data; // ✅ cache write
         this.status = "ready";
+        return data;
       } catch (e: any) {
         this.error =
           e?.data?.error || e?.message || "Failed to load tenant meta";
