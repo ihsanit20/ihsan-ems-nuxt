@@ -71,7 +71,7 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
       { label: "User Management", to: "/admin/setup/users" },
       { label: "Institute Setup", to: "/admin/setup/institute" },
       { label: "Session Setup", to: "/admin/setup/sessions" },
-      // { label: "Payment Methods", to: "setup/payments" },
+      { label: "Class Setup", to: "/admin/setup/grades" },
     ],
   },
 ]);
