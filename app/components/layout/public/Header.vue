@@ -26,9 +26,9 @@ async function onLogout() {
 
 <template>
   <header
-    class="w-full border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60"
+    class="w-full border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 py-2"
   >
-    <div class="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+    <UContainer class="flex justify-between">
       <NuxtLink to="/" class="flex items-center gap-2 font-semibold">
         <img v-if="logo" :src="logo" alt="logo" class="h-6 w-auto" />
         <span>{{ title }}</span>
@@ -47,6 +47,6 @@ async function onLogout() {
       <div v-else class="hidden md:flex items-center gap-2">
         <UserMenu :user="userData" :on-logout="onLogout" />
       </div>
-    </div>
+    </UContainer>
   </header>
 </template>

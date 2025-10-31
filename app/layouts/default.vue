@@ -7,7 +7,7 @@ const title = computed(() => meta.value?.name || "Ihsan EMS");
 
 <template>
   <div class="min-h-screen grid grid-rows-[auto_1fr_auto]">
-    <PublicHeader />
+    <LayoutPublicHeader />
 
     <main class="px-4 py-6">
       <div
@@ -19,6 +19,6 @@ const title = computed(() => meta.value?.name || "Ihsan EMS");
       <slot />
     </main>
 
-    <PublicFooter />
+    <LayoutPublicFooter />
   </div>
 </template>

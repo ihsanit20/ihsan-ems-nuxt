@@ -70,9 +70,8 @@ const mapHref = computed(() =>
 </script>
 
 <template>
-  <footer class="mt-10 border-t">
-    <div class="mx-auto max-w-7xl px-4 py-8 grid gap-8 md:grid-cols-3">
-      <!-- Brand -->
+  <footer class="mt-10 border-t py-4">
+    <UContainer class="grid gap-8 md:grid-cols-3">
       <!-- Brand -->
       <div class="space-y-3">
         <div class="flex items-center gap-3">
@@ -185,7 +184,7 @@ const mapHref = computed(() =>
           </a>
         </div>
       </div>
-    </div>
+    </UContainer>
   </footer>
   <hr class="w-full" />
   <footer class="">

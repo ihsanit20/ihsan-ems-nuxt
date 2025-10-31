@@ -4,13 +4,13 @@
 <template>
   <UDashboardGroup unit="px" storage="local" storage-key="admin-shell">
     <!-- Left sidebar -->
-    <AdminSidebar />
+    <LayoutAdminSidebar />
 
     <UDashboardSearch />
 
     <UDashboardPanel id="main">
       <template #header>
-        <AdminHeader />
+        <LayoutAdminHeader />
       </template>
 
       <template #body>
