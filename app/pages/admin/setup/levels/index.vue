@@ -1,4 +1,3 @@
-<!-- app/pages/admin/setup/levels/index.vue -->
 <script setup lang="ts">
 definePageMeta({
   layout: "admin",
@@ -7,13 +6,7 @@ definePageMeta({
   roles: ["Owner", "Admin", "Developer"],
 });
 
-import { h, reactive, ref, watch, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useHead, useToast } from "#imports";
 import type { TableColumn } from "@nuxt/ui";
-
-import { useLevelStore, type Level } from "~/stores/level";
-import type { Grade } from "~/stores/grade";
 
 /* ---------------- UI component resolves ---------------- */
 const UButton = resolveComponent("UButton");
@@ -21,7 +14,7 @@ const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UBadge = resolveComponent("UBadge");
 
 /* ---------------- Auto-imported in template ----------------
-   UTable, UCard, UInput, USelect, UModal, USwitch, UFormField, UPagination, UCheckbox
+   UTable, UCard, UInput, USelect, UModal, USwitch, UFormField, UPagination
 ---------------------------------------------------------------- */
 
 useHead({ title: "Levels" });
@@ -39,7 +32,6 @@ const {
   active,
   saving,
   removing,
-  mapping,
 } = storeToRefs(store);
 
 /* ---------------- Fetch lifecycle ---------------- */
@@ -109,11 +101,6 @@ const columns: TableColumn<Row>[] = [
         { type: "label", label: "Actions" },
         { type: "separator" as const },
         { label: "Edit", icon: "i-lucide-pencil", onSelect: () => openEdit(r) },
-        {
-          label: "Map grades",
-          icon: "i-lucide-list-checks",
-          onSelect: () => openMap(r),
-        },
         {
           label: r.is_active ? "Deactivate" : "Activate",
           icon: r.is_active ? "i-lucide-pause" : "i-lucide-check",
@@ -287,91 +274,6 @@ async function toggleActive(row: Row) {
     });
   }
 }
-
-/* ---------------- Mapping (Level ↔ Grades) ---------------- */
-const mapOpen = ref(false);
-const mappingLevel = ref<Row | null>(null);
-const allGrades = ref<Grade[]>([]);
-const selectedIds = ref<number[]>([]);
-const sortMap = reactive<Record<number, number | null>>({});
-const loadingGrades = ref(false);
-
-const isSelected = (id: number) => selectedIds.value.includes(id);
-
-function setSelected(id: number, value: boolean | "indeterminate") {
-  const checked = value === true;
-  if (checked) {
-    if (!selectedIds.value.includes(id)) selectedIds.value.push(id);
-  } else {
-    selectedIds.value = selectedIds.value.filter((x) => x !== id);
-  }
-}
-
-function selectAll() {
-  selectedIds.value = allGrades.value.map((g) => g.id);
-}
-function clearAll() {
-  selectedIds.value = [];
-}
-
-/** Load all active grades (unpaginated) for selection */
-async function loadAllGrades() {
-  loadingGrades.value = true;
-  try {
-    const { $publicApi } = useNuxtApp();
-    const res = await $publicApi<{ data: Grade[] }>("/v1/grades", {
-      query: { paginate: false, is_active: true, per_page: 9999 },
-    });
-    allGrades.value = Array.isArray(res?.data) ? res.data : [];
-  } catch (e: any) {
-    allGrades.value = [];
-    toast.add({
-      color: "error",
-      title: "Failed to load grades",
-      description: e?.data?.message || e?.message,
-    });
-  } finally {
-    loadingGrades.value = false;
-  }
-}
-
-/** Open mapping modal */
-async function openMap(row: Row) {
-  mappingLevel.value = row;
-  mapOpen.value = true;
-
-  await Promise.all([
-    loadAllGrades(),
-    store.listGrades(row.id).catch(() => {}),
-  ]);
-
-  // Prepare selection + sort from mapped list
-  const mapped = store.mapped[row.id] || [];
-  selectedIds.value = mapped.map((g) => g.id);
-
-  // Reset and fill sort map
-  Object.keys(sortMap).forEach((k) => delete (sortMap as any)[k]);
-  mapped.forEach((g: any) => {
-    const s = g?.pivot?.sort_order ?? null;
-    sortMap[g.id] = s === null || s === undefined ? null : Number(s);
-  });
-}
-
-/** Save mapping */
-async function saveMapping() {
-  if (!mappingLevel.value) return;
-  try {
-    await store.syncGrades(mappingLevel.value.id, selectedIds.value, sortMap);
-    toast.add({ title: "Mapping saved" });
-    mapOpen.value = false;
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Save failed",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
 </script>
 
 <template>
@@ -524,91 +426,6 @@ async function saveMapping() {
           :loading="removing"
           @click="confirmDelete"
         />
-      </template>
-    </UModal>
-
-    <!-- Map Grades Modal -->
-    <UModal
-      :open="mapOpen"
-      @update:open="mapOpen = $event"
-      :title="`Map grades — ${mappingLevel?.name || ''}`"
-      :prevent-close="mapping"
-      :closeable="!mapping"
-      :ui="{ footer: 'justify-end' }"
-    >
-      <template #body>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-600">
-              Select grades for this level. Optional per-grade order controls
-              display sequence.
-            </div>
-            <div class="flex items-center gap-2">
-              <UButton
-                size="xs"
-                variant="soft"
-                :disabled="!allGrades.length"
-                @click="selectAll"
-              >
-                Select all
-              </UButton>
-              <UButton
-                size="xs"
-                color="neutral"
-                variant="outline"
-                @click="clearAll"
-                >Clear</UButton
-              >
-            </div>
-          </div>
-
-          <div v-if="loadingGrades" class="text-sm text-gray-500">
-            Loading grades…
-          </div>
-
-          <div v-else class="max-h-96 overflow-auto border rounded-lg divide-y">
-            <div
-              v-for="g in allGrades"
-              :key="g.id"
-              class="flex items-center justify-between gap-3 px-3 py-2"
-            >
-              <div class="flex items-center gap-3">
-                <!-- boolean model; union type handled in setSelected -->
-                <UCheckbox
-                  :model-value="isSelected(g.id)"
-                  @update:model-value="(v) => setSelected(g.id, v)"
-                />
-                <div class="leading-tight">
-                  <div class="font-medium text-sm">{{ g.name }}</div>
-                  <div class="text-xs text-gray-500">
-                    #{{ g.id }} <span v-if="g.code">• {{ g.code }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-500">Order</span>
-                <UInput
-                  class="w-20"
-                  type="number"
-                  :disabled="!isSelected(g.id)"
-                  v-model.number="(sortMap as any)[g.id]"
-                  placeholder="—"
-                  min="0"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <UButton
-          label="Cancel"
-          color="neutral"
-          variant="outline"
-          :disabled="mapping"
-          @click="mapOpen = false"
-        />
-        <UButton label="Save mapping" :loading="mapping" @click="saveMapping" />
       </template>
     </UModal>
   </div>

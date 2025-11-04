@@ -3,15 +3,24 @@ import { defineStore } from "pinia";
 /* ---------- Types ---------- */
 export type Grade = {
   id: number;
+  level_id: number; // ✅ NEW
   name: string;
   code?: string | null;
   sort_order?: number | null;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+
+  // optional embed if ?with=level ব্যবহার করো
+  level?: {
+    id: number;
+    name: string;
+    code?: string | null;
+  };
 };
 
 export type GradeFilters = {
+  level_id?: number; // ✅ NEW (filter)
   is_active?: boolean | null;
   q?: string;
   page?: number;
@@ -32,6 +41,8 @@ export const useGradeStore = defineStore("grades", {
     items: [] as Grade[],
     current: null as Grade | null,
 
+    // filters
+    level_id: undefined as number | undefined, // ✅ NEW
     active: null as boolean | null, // UI: All/Active/Inactive
     q: "" as string,
     page: 1,
@@ -48,7 +59,8 @@ export const useGradeStore = defineStore("grades", {
   getters: {
     params(state): GradeFilters {
       return {
-        is_active: state.active ?? undefined, // API expects is_active
+        level_id: state.level_id ?? undefined, // ✅ NEW
+        is_active: state.active ?? undefined,
         q: state.q || undefined,
         page: state.page,
         per_page: state.per_page,
@@ -57,6 +69,11 @@ export const useGradeStore = defineStore("grades", {
   },
 
   actions: {
+    setLevelFilter(levelId?: number) {
+      // ✅ NEW
+      this.level_id = levelId || undefined;
+      this.page = 1;
+    },
     setActive(active: boolean | null) {
       this.active = active;
       this.page = 1;
@@ -73,6 +90,7 @@ export const useGradeStore = defineStore("grades", {
       this.page = 1;
     },
     resetFilters() {
+      this.level_id = undefined; // ✅ NEW
       this.active = null;
       this.q = "";
       this.page = 1;
@@ -80,13 +98,13 @@ export const useGradeStore = defineStore("grades", {
     },
 
     // GET /v1/grades (paginated)
-    async fetchList() {
+    async fetchList(extraQuery?: Record<string, any>) {
       const { $publicApi } = useNuxtApp();
       this.loading = true;
       this.error = "";
       try {
         const res = await $publicApi<Paginated<Grade>>("/v1/grades", {
-          query: this.params,
+          query: { ...this.params, ...(extraQuery || {}) },
         });
         this.items = res.data || [];
         this.page = res.current_page ?? 1;
@@ -102,12 +120,13 @@ export const useGradeStore = defineStore("grades", {
     },
 
     // GET /v1/grades/{id}
-    async fetchOne(id: number) {
+    async fetchOne(id: number, opts?: { withLevel?: boolean }) {
       const { $publicApi } = useNuxtApp();
       this.loading = true;
       this.error = "";
       try {
-        const grade = await $publicApi<Grade>(`/v1/grades/${id}`);
+        const query = opts?.withLevel ? { with_level: 1 } : undefined; // optional embed
+        const grade = await $publicApi<Grade>(`/v1/grades/${id}`, { query });
         this.current = grade;
         return grade;
       } catch (e: any) {
@@ -120,6 +139,7 @@ export const useGradeStore = defineStore("grades", {
 
     // POST /v1/grades
     async create(payload: {
+      level_id: number; // ✅ NEW (required)
       name: string;
       code?: string | null;
       sort_order?: number | null;
@@ -147,6 +167,7 @@ export const useGradeStore = defineStore("grades", {
     async update(
       id: number,
       payload: Partial<{
+        level_id: number; // ✅ NEW
         name: string;
         code: string | null;
         sort_order: number | null;

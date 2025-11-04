@@ -1,6 +1,5 @@
 // ~/stores/level.ts
 import { defineStore } from "pinia";
-import type { Grade } from "~/stores/grade";
 
 /* ---------- Types ---------- */
 export type Level = {
@@ -11,8 +10,6 @@ export type Level = {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
-  // when loaded with ?with_grades=1, controller may embed:
-  grades?: Grade[];
 };
 
 export type LevelFilters = {
@@ -44,13 +41,9 @@ export const useLevelStore = defineStore("levels", {
     total: 0,
     last_page: 1,
 
-    // mapped grades cache: level_id -> grades[]
-    mapped: {} as Record<number, Grade[]>,
-
     loading: false,
     saving: false,
     removing: false,
-    mapping: false,
     error: "" as string,
   }),
 
@@ -62,10 +55,6 @@ export const useLevelStore = defineStore("levels", {
         page: state.page,
         per_page: state.per_page,
       };
-    },
-    mappedOfCurrent(state): Grade[] {
-      const id = state.current?.id;
-      return id ? state.mapped[id] || [] : [];
     },
   },
 
@@ -115,18 +104,13 @@ export const useLevelStore = defineStore("levels", {
     },
 
     // GET /v1/levels/{id}
-    async fetchOne(id: number, opts?: { withGrades?: boolean }) {
+    async fetchOne(id: number) {
       const { $publicApi } = useNuxtApp();
       this.loading = true;
       this.error = "";
       try {
-        const q = opts?.withGrades ? { with_grades: 1 } : undefined;
-        const level = await $publicApi<Level>(`/v1/levels/${id}`, { query: q });
+        const level = await $publicApi<Level>(`/v1/levels/${id}`);
         this.current = level;
-        // if controller embedded grades, cache them
-        if (Array.isArray(level.grades)) {
-          this.mapped[id] = level.grades as Grade[];
-        }
         return level;
       } catch (e: any) {
         this.error = e?.data?.message || e?.message || "Failed to load level";
@@ -202,73 +186,11 @@ export const useLevelStore = defineStore("levels", {
         });
         this.items = this.items.filter((x) => x.id !== id);
         if (this.current?.id === id) this.current = null;
-        delete this.mapped[id];
       } catch (e: any) {
         this.error = e?.data?.message || e?.message || "Failed to delete level";
         throw e;
       } finally {
         this.removing = false;
-      }
-    },
-
-    // GET /v1/levels/{id}/grades  → { data: Grade[] }
-    async listGrades(levelId: number) {
-      const { $publicApi } = useNuxtApp();
-      this.loading = true;
-      this.error = "";
-      try {
-        const res = await $publicApi<{ data: Grade[] }>(
-          `/v1/levels/${levelId}/grades`
-        );
-        const data = Array.isArray(res?.data) ? res.data : [];
-        this.mapped[levelId] = data;
-        if (this.current?.id === levelId) {
-          this.current = { ...(this.current as Level), grades: data };
-        }
-        return data;
-      } catch (e: any) {
-        this.error =
-          e?.data?.message || e?.message || "Failed to load mapped grades";
-        throw e;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // PUT /v1/levels/{id}/grades  → body: { grade_ids: number[], sort?: { [id]: number } }
-    async syncGrades(
-      levelId: number,
-      gradeIds: number[],
-      sort?: Record<number, number | null>
-    ) {
-      const { $api } = useNuxtApp();
-      this.mapping = true;
-      this.error = "";
-      try {
-        const result = await $api<any>(`/v1/levels/${levelId}/grades`, {
-          method: "PUT",
-          body: { grade_ids: gradeIds, sort: sort || undefined },
-        });
-        // Controller returns Level with 'grades' relation
-        const grades: Grade[] =
-          (result?.grades as Grade[]) ??
-          (Array.isArray(result?.data) ? (result.data as Grade[]) : []);
-        if (Array.isArray(grades)) {
-          this.mapped[levelId] = grades;
-          if (this.current?.id === levelId) {
-            this.current = { ...(this.current as Level), grades };
-          }
-        } else {
-          // fallback: refresh mapping explicitly
-          await this.listGrades(levelId);
-        }
-        return this.mapped[levelId] || [];
-      } catch (e: any) {
-        this.error =
-          e?.data?.message || e?.message || "Failed to sync mapped grades";
-        throw e;
-      } finally {
-        this.mapping = false;
       }
     },
   },
