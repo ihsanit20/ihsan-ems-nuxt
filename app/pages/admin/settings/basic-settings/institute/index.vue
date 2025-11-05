@@ -1,4 +1,4 @@
-<!-- app/pages/admin/setup/institute/index.vue -->
+<!-- app/pages/admin/settings/basic-settings/institute/index.vue -->
 <script setup lang="ts">
 definePageMeta({
   layout: "admin",
@@ -7,9 +7,7 @@ definePageMeta({
   roles: ["Owner", "Admin", "Developer"],
 });
 
-import { reactive, ref, onMounted, computed } from "vue";
 import { useToast, useHead, useNuxtApp } from "#imports";
-import { useInstituteStore, type InstituteProfile } from "~/stores/institute";
 
 useHead({ title: "Institute Setup" });
 
@@ -150,15 +148,32 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+const router = useRouter();
+const goBack = () => router.back();
 </script>
 
 <template>
-  <UContainer class="max-w-5xl">
+  <UContainer>
     <!-- Header -->
     <div class="flex items-center justify-between py-4">
-      <div>
-        <h1 class="text-2xl font-semibold">Institute Setup</h1>
-        <p class="text-sm text-muted-foreground">প্রোফাইল তথ্য আপডেট করুন</p>
+      <div class="flex items-center gap-2">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          aria-label="Go back"
+          @click="goBack"
+        >
+          <Icon name="i-heroicons-arrow-left" class="h-5 w-5" />
+        </UButton>
+
+        <div>
+          <h1 class="text-2xl font-semibold">Institute Setup</h1>
+          <p class="text-sm text-muted-foreground">
+            Update your profile information
+          </p>
+        </div>
       </div>
 
       <!-- Actions -->

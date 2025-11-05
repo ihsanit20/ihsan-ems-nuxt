@@ -68,11 +68,9 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     icon: "i-lucide-settings",
     defaultOpen: true,
     children: [
-      { label: "User Management", to: "/admin/setup/users" },
-      { label: "Institute Setup", to: "/admin/setup/institute" },
-      { label: "Session Setup", to: "/admin/setup/sessions" },
-      { label: "Level Setup", to: "/admin/setup/levels" },
-      { label: "Grade Setup", to: "/admin/setup/grades" },
+      { label: "Basic Settings", to: "/admin/settings/basic-settings" },
+      { label: "Session Setup", to: "/admin/settings/sessions" },
+      { label: "User Management", to: "/admin/settings/users" },
     ],
   },
 ]);

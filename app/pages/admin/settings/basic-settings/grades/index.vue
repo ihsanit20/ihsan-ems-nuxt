@@ -6,7 +6,9 @@ definePageMeta({
   roles: ["Owner", "Admin", "Developer"],
 });
 
-import type { TableColumn } from "@nuxt/ui";
+import { useHead, useToast } from "#imports";
+import { useRouter } from "vue-router";
+import type { TableColumn, SelectItem } from "@nuxt/ui";
 
 /* ---------------- UI component resolves ---------------- */
 const UButton = resolveComponent("UButton");
@@ -17,10 +19,13 @@ const UBadge = resolveComponent("UBadge");
    UTable, UCard, UInput, USelect, UModal, USwitch, UFormField, UPagination
 ---------------------------------------------------------------- */
 
-useHead({ title: "Levels" });
+useHead({ title: "Grades" });
 
 const toast = useToast();
-const store = useLevelStore();
+const router = useRouter();
+const goBack = () => router.back();
+
+const store = useGradeStore();
 const {
   items,
   loading,
@@ -34,8 +39,49 @@ const {
   removing,
 } = storeToRefs(store);
 
+/* ---------------- Local: Level filters/items ---------------- */
+const levelOptions = ref<SelectItem<number>[]>([]);
+const levelFilter = ref<number | null>(null);
+
+const levelFilterItems = computed<SelectItem[]>(() => [
+  { label: "All Levels", value: null },
+  ...levelOptions.value,
+]);
+
+const activeItems: SelectItem[] = [
+  { label: "All", value: null },
+  { label: "Active", value: true },
+  { label: "Inactive", value: false },
+];
+
+const perPageItems = computed<SelectItem<number>[]>(() =>
+  [10, 15, 25, 50].map((n) => ({ label: String(n), value: n }))
+);
+
+/** Load all active levels (unpaginated) for filter + form */
+async function loadLevels() {
+  try {
+    const { $publicApi } = useNuxtApp();
+    const res = await $publicApi<{ data: { id: number; name: string }[] }>(
+      "/v1/levels",
+      { query: { paginate: false, is_active: true, per_page: 9999 } }
+    );
+    const list = Array.isArray(res?.data) ? res.data : [];
+    levelOptions.value = list.map((l) => ({ label: l.name, value: l.id }));
+  } catch (e: any) {
+    levelOptions.value = [];
+    toast.add({
+      color: "error",
+      title: "Failed to load levels",
+      description: e?.data?.message || e?.message,
+    });
+  }
+}
+
 /* ---------------- Fetch lifecycle ---------------- */
-onMounted(() => store.fetchList().catch(() => {}));
+onMounted(async () => {
+  await Promise.all([loadLevels(), store.fetchList()]);
+});
 
 watch([q, active, per_page], () => {
   store.setPage(1);
@@ -43,8 +89,15 @@ watch([q, active, per_page], () => {
 });
 watch(page, () => store.fetchList().catch(() => {}));
 
+/* level filter -> store setter */
+watch(levelFilter, (v) => {
+  store.setLevelFilter(typeof v === "number" ? v : undefined);
+  store.setPage(1);
+  store.fetchList().catch(() => {});
+});
+
 /* ---------------- Helpers ---------------- */
-type Row = Level;
+type Row = Grade;
 
 const columns: TableColumn<Row>[] = [
   {
@@ -56,6 +109,16 @@ const columns: TableColumn<Row>[] = [
         h("div", { class: "font-medium" }, row.getValue("name") as string),
         h("div", { class: "text-xs text-gray-500" }, `#${row.original.id}`),
       ]),
+  },
+  {
+    id: "level",
+    header: "Level",
+    cell: ({ row }) =>
+      h(
+        "span",
+        { class: "text-sm text-gray-700" },
+        row.original.level?.name ?? `ID: ${row.original.level_id}`
+      ),
   },
   {
     id: "code",
@@ -71,11 +134,11 @@ const columns: TableColumn<Row>[] = [
     id: "sort_order",
     header: "Order",
     cell: ({ row }) => {
-      const so = (row.original as Row).sort_order;
+      const so = row.original.sort_order;
       return h(
         "span",
         { class: "text-sm" },
-        so === null || so === undefined ? "—" : String(so)
+        typeof so === "number" ? String(so) : "—"
       );
     },
   },
@@ -138,6 +201,7 @@ const isEdit = ref(false);
 const editingId = ref<number | null>(null);
 
 type FormState = {
+  level_id: number | null;
   name: string;
   code: string;
   sort_order: number | null;
@@ -145,6 +209,7 @@ type FormState = {
 };
 
 const form = reactive<FormState>({
+  level_id: null,
   name: "",
   code: "",
   sort_order: null,
@@ -159,6 +224,7 @@ function clearErrors() {
 
 function validate(): boolean {
   clearErrors();
+  if (!form.level_id) errors.level_id = "Level is required";
   if (!form.name?.trim()) errors.name = "Name is required";
   if (
     form.sort_order !== null &&
@@ -173,6 +239,7 @@ function openCreate() {
   isEdit.value = false;
   editingId.value = null;
   Object.assign(form, {
+    level_id: levelFilter.value || null,
     name: "",
     code: "",
     sort_order: null,
@@ -187,6 +254,7 @@ function openEdit(row: Row) {
   editingId.value = row.id;
   const so = row.sort_order;
   Object.assign(form, {
+    level_id: row.level_id,
     name: row.name,
     code: row.code || "",
     sort_order: typeof so === "number" ? so : null,
@@ -202,10 +270,11 @@ async function submitForm() {
     return;
   }
   const payload = {
+    level_id: Number(form.level_id),
     name: form.name.trim(),
     code: form.code?.trim() || null,
     sort_order:
-      form.sort_order === null || (form.sort_order as any) === ""
+      form.sort_order === null || form.sort_order === ("" as any)
         ? null
         : Number(form.sort_order),
     is_active: !!form.is_active,
@@ -214,13 +283,13 @@ async function submitForm() {
   try {
     if (isEdit.value && editingId.value) {
       await store.update(editingId.value, payload);
-      toast.add({ title: "Level updated" });
+      toast.add({ title: "Grade updated" });
     } else {
       await store.create(payload);
-      toast.add({ title: "Level created" });
+      toast.add({ title: "Grade created" });
     }
     formOpen.value = false;
-    await store.fetchList();
+    await store.fetchList({ with: "level" });
   } catch (e: any) {
     toast.add({
       color: "error",
@@ -247,7 +316,7 @@ async function confirmDelete() {
   if (!deleting.id) return;
   try {
     await store.remove(deleting.id);
-    toast.add({ title: "Level deleted" });
+    toast.add({ title: "Grade deleted" });
   } catch (e: any) {
     toast.add({
       color: "error",
@@ -277,45 +346,61 @@ async function toggleActive(row: Row) {
 </script>
 
 <template>
-  <div class="p-4 md:p-6 space-y-4">
+  <UContainer class="space-y-4">
     <!-- Top bar -->
-    <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
+    <div
+      class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Back -->
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-arrow-left"
+          aria-label="Go back"
+          @click="goBack"
+        >
+          Back
+        </UButton>
+
         <UInput v-model="q" placeholder="Search by name/code…" class="w-64" />
         <USelect
+          v-model="levelFilter"
+          :items="levelFilterItems"
+          class="w-56"
+          placeholder="Filter by level"
+          :popper="{ strategy: 'fixed' }"
+        />
+        <USelect
           v-model="active"
-          :options="[
-            { label: 'All', value: null },
-            { label: 'Active', value: true },
-            { label: 'Inactive', value: false },
-          ]"
+          :items="activeItems"
           class="w-40"
+          :popper="{ strategy: 'fixed' }"
         />
         <USelect
           v-model="per_page"
-          :options="
-            [10, 15, 25, 50].map((n) => ({ label: String(n), value: n }))
-          "
+          :items="perPageItems"
           class="w-24"
+          :popper="{ strategy: 'fixed' }"
         />
         <UButton
           variant="soft"
           icon="i-lucide-rotate-cw"
-          @click="store.fetchList()"
+          @click="store.fetchList({ with: 'level' })"
         >
           Refresh
         </UButton>
       </div>
 
       <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-plus" @click="openCreate">New Level</UButton>
+        <UButton icon="i-lucide-plus" @click="openCreate">New Grade</UButton>
       </div>
     </div>
 
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <div class="font-semibold">Levels</div>
+          <div class="font-semibold">Grades</div>
           <div class="text-sm text-gray-500">Total: {{ total }}</div>
         </div>
       </template>
@@ -339,22 +424,34 @@ async function toggleActive(row: Row) {
     <UModal
       :open="formOpen"
       @update:open="formOpen = $event"
-      :title="isEdit ? 'Edit Level' : 'New Level'"
+      :title="isEdit ? 'Edit Grade' : 'New Grade'"
       :prevent-close="saving"
       :closeable="!saving"
-      :ui="{ footer: 'justify-end' }"
+      :ui="{ body: 'overflow-visible', footer: 'justify-end' }"
     >
       <template #body>
         <div class="grid gap-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="Level" name="level_id" :error="errors.level_id">
+              <USelect
+                v-model="form.level_id"
+                :items="levelOptions"
+                placeholder="Select a level"
+                class="w-full"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+
+            <UFormField label="Code" name="code">
+              <UInput v-model="form.code" placeholder="e.g., C6" />
+            </UFormField>
+          </div>
+
           <UFormField label="Name" name="name" :error="errors.name">
-            <UInput v-model="form.name" placeholder="e.g., Primary" />
+            <UInput v-model="form.name" placeholder="e.g., Class 6" />
           </UFormField>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="Code" name="code">
-              <UInput v-model="form.code" placeholder="e.g., PRI" />
-            </UFormField>
-
             <UFormField
               label="Order"
               name="sort_order"
@@ -367,16 +464,16 @@ async function toggleActive(row: Row) {
                 placeholder="(optional)"
               />
             </UFormField>
-          </div>
 
-          <UFormField label="Status" name="is_active">
-            <div class="flex items-center gap-2">
-              <USwitch v-model="form.is_active" />
-              <span class="text-sm">
-                {{ form.is_active ? "Active" : "Inactive" }}
-              </span>
-            </div>
-          </UFormField>
+            <UFormField label="Status" name="is_active">
+              <div class="flex items-center gap-2">
+                <USwitch v-model="form.is_active" />
+                <span class="text-sm">{{
+                  form.is_active ? "Active" : "Inactive"
+                }}</span>
+              </div>
+            </UFormField>
+          </div>
         </div>
       </template>
 
@@ -401,7 +498,7 @@ async function toggleActive(row: Row) {
     <UModal
       :open="deleteOpen"
       @update:open="deleteOpen = $event"
-      title="Delete level"
+      title="Delete grade"
       :prevent-close="removing || saving"
       :closeable="!(removing || saving)"
       :ui="{ footer: 'justify-end' }"
@@ -428,5 +525,5 @@ async function toggleActive(row: Row) {
         />
       </template>
     </UModal>
-  </div>
+  </UContainer>
 </template>
