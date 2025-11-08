@@ -243,7 +243,7 @@ const goBack = () => router.back();
         </template>
 
         <div class="grid gap-3">
-          <UFormGroup label="English name" :error="errors['names.en']">
+          <UFormField label="English name" :error="errors['names.en']">
             <UInput
               v-model="form.names!.en"
               :disabled="!isEditing || saving"
@@ -254,9 +254,9 @@ const goBack = () => router.back();
                 <Icon name="i-heroicons-language" class="h-5 w-5" />
               </template>
             </UInput>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Bangla name" :error="errors['names.bn']">
+          <UFormField label="Bangla name" :error="errors['names.bn']">
             <UInput
               v-model="form.names!.bn"
               :disabled="!isEditing || saving"
@@ -267,9 +267,9 @@ const goBack = () => router.back();
                 <Icon name="i-heroicons-language" class="h-5 w-5" />
               </template>
             </UInput>
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup label="Arabic name" :error="errors['names.ar']">
+          <UFormField label="Arabic name" :error="errors['names.ar']">
             <UInput
               v-model="form.names!.ar"
               :disabled="!isEditing || saving"
@@ -281,7 +281,7 @@ const goBack = () => router.back();
                 <Icon name="i-heroicons-language" class="h-5 w-5" />
               </template>
             </UInput>
-          </UFormGroup>
+          </UFormField>
         </div>
       </UCard>
 
@@ -295,7 +295,7 @@ const goBack = () => router.back();
         </template>
 
         <div class="grid gap-3">
-          <UFormGroup label="Address *" :error="errors['contact.address']">
+          <UFormField label="Address *" :error="errors['contact.address']">
             <UTextarea
               v-model="form.contact.address"
               :disabled="!isEditing || saving"
@@ -303,10 +303,10 @@ const goBack = () => router.back();
               placeholder="House 12, Road 5&#10;Mirpur-10, Dhaka-1216"
               class="w-full"
             />
-          </UFormGroup>
+          </UFormField>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <UFormGroup label="Phone" :error="errors['contact.phone']">
+            <UFormField label="Phone" :error="errors['contact.phone']">
               <UInput
                 v-model="form.contact.phone"
                 :disabled="!isEditing || saving"
@@ -317,9 +317,9 @@ const goBack = () => router.back();
                   <Icon name="i-heroicons-phone" class="h-5 w-5" />
                 </template>
               </UInput>
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup label="Email" :error="errors['contact.email']">
+            <UFormField label="Email" :error="errors['contact.email']">
               <UInput
                 v-model="form.contact.email"
                 :disabled="!isEditing || saving"
@@ -331,10 +331,10 @@ const goBack = () => router.back();
                   <Icon name="i-heroicons-envelope" class="h-5 w-5" />
                 </template>
               </UInput>
-            </UFormGroup>
+            </UFormField>
           </div>
 
-          <UFormGroup label="Website" :error="errors['contact.website']">
+          <UFormField label="Website" :error="errors['contact.website']">
             <UInput
               v-model="form.contact.website"
               :disabled="!isEditing || saving"
@@ -345,10 +345,10 @@ const goBack = () => router.back();
                 <Icon name="i-heroicons-globe-alt" class="h-5 w-5" />
               </template>
             </UInput>
-          </UFormGroup>
+          </UFormField>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <UFormGroup
+            <UFormField
               label="Facebook"
               :error="errors['contact.social.facebook']"
             >
@@ -362,9 +362,9 @@ const goBack = () => router.back();
                   <Icon name="i-simple-icons-facebook" class="h-5 w-5" />
                 </template>
               </UInput>
-            </UFormGroup>
+            </UFormField>
 
-            <UFormGroup
+            <UFormField
               label="YouTube"
               :error="errors['contact.social.youtube']"
             >
@@ -378,10 +378,10 @@ const goBack = () => router.back();
                   <Icon name="i-simple-icons-youtube" class="h-5 w-5" />
                 </template>
               </UInput>
-            </UFormGroup>
+            </UFormField>
           </div>
 
-          <UFormGroup
+          <UFormField
             label="WhatsApp"
             :error="errors['contact.social.whatsapp']"
           >
@@ -395,7 +395,7 @@ const goBack = () => router.back();
                 <Icon name="i-simple-icons-whatsapp" class="h-5 w-5" />
               </template>
             </UInput>
-          </UFormGroup>
+          </UFormField>
         </div>
       </UCard>
     </div>
