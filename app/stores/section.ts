@@ -1,4 +1,4 @@
-// ~/stores/section.ts
+// app/stores/section.ts
 import { defineStore } from "pinia";
 
 /* ---------- Types ---------- */

@@ -1,4 +1,4 @@
-// ~/stores/session-grade.ts
+// app/stores/session-grade.ts
 import { defineStore } from "pinia";
 
 /* ---------- Types ---------- */

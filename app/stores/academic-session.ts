@@ -1,3 +1,4 @@
+// app/stores/academic-session.ts
 import { defineStore } from "pinia";
 
 /* ---------- Types ---------- */

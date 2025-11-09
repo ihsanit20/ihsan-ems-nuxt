@@ -83,7 +83,7 @@ function toDateInput(v?: string) {
 
 /* ---------------- Navigation ---------------- */
 const openDetails = (r: AcademicSession) =>
-  router.push(`/admin/settings/sessions/${r.id}`);
+  router.push(`/admin/settings/sessions/${r.id}/details`);
 
 /* ---------------- Add/Edit modal (same as before) ---------------- */
 const formOpen = ref(false);
