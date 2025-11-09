@@ -1,4 +1,4 @@
-// stores/session-grade.ts
+// ~/stores/session-grade.ts
 import { defineStore } from "pinia";
 
 /* ---------- Types ---------- */
@@ -6,49 +6,28 @@ export type SessionGrade = {
   id: number;
   academic_session_id: number;
   grade_id: number;
-  capacity: number;
+  shift?: string | null;
+  medium?: string | null;
+  capacity?: number | null;
   class_teacher_id?: number | null;
+  code?: string | null;
   meta_json?: Record<string, any> | null;
   created_at?: string;
   updated_at?: string;
 
-  // optional embeds if ?with=... ব্যবহার করা হয়
-  academicSession?: {
-    id: number;
-    name: string;
-    start_date: string;
-    end_date: string;
-    is_active: boolean;
-  };
-  grade?: {
-    id: number;
-    level_id: number;
-    name: string;
-    code?: string | null;
-  };
-  classTeacher?: {
-    id: number;
-    name: string;
-    email?: string;
-  } | null;
-  sections?: Array<{
-    id: number;
-    session_grade_id: number;
-    name: string;
-    code?: string | null;
-    capacity?: number | null;
-    class_teacher_id?: number | null;
-    sort_order?: number | null;
-  }>;
+  // eager (optional)
+  grade?: { id: number; name: string; code?: string | null };
+  class_teacher?: { id: number; name: string } | null;
 };
 
 export type SessionGradeFilters = {
-  academic_session_id?: number;
+  // when listing by session
+  session_id?: number; // required for /sessions/{session}/classes
   grade_id?: number;
-  class_teacher_id?: number;
+  shift?: string;
+  medium?: string;
   page?: number;
   per_page?: number;
-  with?: string; // e.g. "grade,academicSession,sections,classTeacher"
 };
 
 type Paginated<T> = {
@@ -59,22 +38,18 @@ type Paginated<T> = {
   last_page: number;
 };
 
-/* ---------- Store ---------- */
 export const useSessionGradeStore = defineStore("session-grades", {
   state: () => ({
     items: [] as SessionGrade[],
     current: null as SessionGrade | null,
 
     // filters
-    academic_session_id: undefined as number | undefined,
+    session_id: null as number | null, // picker on UI
     grade_id: undefined as number | undefined,
-    class_teacher_id: undefined as number | undefined,
+    shift: "" as string,
+    medium: "" as string,
     page: 1,
     per_page: 15,
-
-    // embed control (comma separated as backend expects)
-    withEmbeds: "grade,academicSession,sections,classTeacher" as string,
-
     total: 0,
     last_page: 1,
 
@@ -87,28 +62,31 @@ export const useSessionGradeStore = defineStore("session-grades", {
   getters: {
     params(state): SessionGradeFilters {
       return {
-        academic_session_id: state.academic_session_id ?? undefined,
-        grade_id: state.grade_id ?? undefined,
-        class_teacher_id: state.class_teacher_id ?? undefined,
+        session_id: state.session_id ?? undefined,
+        grade_id: state.grade_id,
+        shift: state.shift || undefined,
+        medium: state.medium || undefined,
         page: state.page,
         per_page: state.per_page,
-        with: state.withEmbeds || undefined,
       };
     },
   },
 
   actions: {
-    /* ----- Filter setters ----- */
-    setSession(sessionId?: number) {
-      this.academic_session_id = sessionId || undefined;
+    setSession(id: number | null) {
+      this.session_id = id;
       this.page = 1;
     },
-    setGrade(gradeId?: number) {
-      this.grade_id = gradeId || undefined;
+    setGrade(id?: number) {
+      this.grade_id = id;
       this.page = 1;
     },
-    setClassTeacher(userId?: number) {
-      this.class_teacher_id = userId || undefined;
+    setShift(s: string) {
+      this.shift = s;
+      this.page = 1;
+    },
+    setMedium(m: string) {
+      this.medium = m;
       this.page = 1;
     },
     setPage(p: number) {
@@ -118,51 +96,27 @@ export const useSessionGradeStore = defineStore("session-grades", {
       this.per_page = Math.max(1, n || 1);
       this.page = 1;
     },
-    setWithEmbeds(csv?: string) {
-      this.withEmbeds = (csv || "").trim();
-    },
     resetFilters() {
-      this.academic_session_id = undefined;
       this.grade_id = undefined;
-      this.class_teacher_id = undefined;
+      this.shift = "";
+      this.medium = "";
       this.page = 1;
       this.per_page = 15;
     },
 
-    /* ----- API: GET /v1/session-grades (paginated) ----- */
+    /* ---------------------------------------------
+     * READ: list by session
+     * GET /v1/sessions/{session}/classes
+     * -------------------------------------------*/
     async fetchList(extraQuery?: Record<string, any>) {
+      if (!this.session_id) throw new Error("session_id is required");
       const { $publicApi } = useNuxtApp();
-      this.loading = true;
-      this.error = "";
-      try {
-        const res = await $publicApi<Paginated<SessionGrade>>(
-          "/v1/session-grades",
-          {
-            query: { ...this.params, ...(extraQuery || {}) },
-          }
-        );
-        this.items = res.data || [];
-        this.page = res.current_page ?? 1;
-        this.per_page = res.per_page ?? this.per_page;
-        this.total = res.total ?? 0;
-        this.last_page = res.last_page ?? 1;
-      } catch (e: any) {
-        this.error =
-          e?.data?.message || e?.message || "Failed to load session grades";
-        throw e;
-      } finally {
-        this.loading = false;
-      }
-    },
 
-    /* ----- API: GET /v1/sessions/{session}/grades (read-only nested) ----- */
-    async fetchBySession(sessionId: number, extraQuery?: Record<string, any>) {
-      const { $publicApi } = useNuxtApp();
       this.loading = true;
       this.error = "";
       try {
         const res = await $publicApi<Paginated<SessionGrade>>(
-          `/v1/sessions/${sessionId}/grades`,
+          `/v1/sessions/${this.session_id}/classes`,
           { query: { ...this.params, ...(extraQuery || {}) } }
         );
         this.items = res.data || [];
@@ -172,80 +126,122 @@ export const useSessionGradeStore = defineStore("session-grades", {
         this.last_page = res.last_page ?? 1;
       } catch (e: any) {
         this.error =
-          e?.data?.message || e?.message || "Failed to load session grades";
+          e?.data?.message || e?.message || "Failed to load session classes";
         throw e;
       } finally {
         this.loading = false;
       }
     },
 
-    /* ----- API: GET /v1/session-grades/{id} ----- */
-    async fetchOne(
-      id: number,
-      opts?: {
-        with?: string | string[]; // override embeds
-      }
-    ) {
+    /* ---------------------------------------------
+     * READ: single
+     * GET /v1/session-grades/{id}
+     * -------------------------------------------*/
+    async fetchOne(id: number) {
       const { $publicApi } = useNuxtApp();
       this.loading = true;
       this.error = "";
       try {
-        const withParam =
-          typeof opts?.with === "string"
-            ? opts?.with
-            : Array.isArray(opts?.with)
-            ? opts?.with.join(",")
-            : this.withEmbeds || undefined;
-
-        const sg = await $publicApi<SessionGrade>(`/v1/session-grades/${id}`, {
-          query: withParam ? { with: withParam } : undefined,
-        });
-        this.current = sg;
-        return sg;
+        const data = await $publicApi<SessionGrade>(`/v1/session-grades/${id}`);
+        this.current = data;
+        return data;
       } catch (e: any) {
         this.error =
-          e?.data?.message || e?.message || "Failed to load session grade";
+          e?.data?.message || e?.message || "Failed to load session-grade item";
         throw e;
       } finally {
         this.loading = false;
       }
     },
 
-    /* ----- API: POST /v1/session-grades ----- */
-    async create(payload: {
-      academic_session_id: number;
-      grade_id: number;
-      capacity: number;
-      class_teacher_id?: number | null;
-      meta_json?: Record<string, any> | null;
-    }) {
+    /* ---------------------------------------------
+     * CREATE single
+     * POST /v1/sessions/{session}/classes
+     * -------------------------------------------*/
+    async create(
+      sessionId: number,
+      payload: {
+        grade_id: number;
+        shift?: string | null;
+        medium?: string | null;
+        capacity?: number | null;
+        class_teacher_id?: number | null;
+        code?: string | null;
+        meta_json?: Record<string, any> | null;
+      }
+    ) {
       const { $api } = useNuxtApp();
       this.saving = true;
       this.error = "";
       try {
-        const created = await $api<SessionGrade>("/v1/session-grades", {
-          method: "POST",
-          body: payload,
-        });
-        if (this.page === 1) this.items.unshift(created);
+        const created = await $api<SessionGrade>(
+          `/v1/sessions/${sessionId}/classes`,
+          { method: "POST", body: payload }
+        );
+        // optimistic add when listing same session
+        if (this.session_id === sessionId && this.page === 1)
+          this.items.unshift(created);
         return created;
       } catch (e: any) {
         this.error =
-          e?.data?.message || e?.message || "Failed to create session grade";
+          e?.data?.message || e?.message || "Failed to open class (session)";
         throw e;
       } finally {
         this.saving = false;
       }
     },
 
-    /* ----- API: PATCH /v1/session-grades/{id} ----- */
+    /* ---------------------------------------------
+     * BULK open
+     * POST /v1/sessions/{session}/classes/bulk-open
+     * -------------------------------------------*/
+    async bulkOpen(
+      sessionId: number,
+      payload: {
+        grade_ids: number[];
+        shift?: string | null;
+        medium?: string | null;
+        capacity?: number | null;
+        class_teacher_id?: number | null;
+      }
+    ) {
+      const { $api } = useNuxtApp();
+      this.saving = true;
+      this.error = "";
+      try {
+        const res = await $api<{
+          created_count: number;
+          items: SessionGrade[];
+        }>(`/v1/sessions/${sessionId}/classes/bulk-open`, {
+          method: "POST",
+          body: payload,
+        });
+        // optimistic merge
+        if (this.session_id === sessionId && this.page === 1) {
+          this.items = [...(res.items || []), ...this.items];
+        }
+        return res;
+      } catch (e: any) {
+        this.error =
+          e?.data?.message || e?.message || "Failed to bulk-open classes";
+        throw e;
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    /* ---------------------------------------------
+     * UPDATE
+     * PATCH /v1/session-classes/{id}
+     * -------------------------------------------*/
     async update(
       id: number,
       payload: Partial<{
-        academic_session_id: number;
-        grade_id: number;
-        capacity: number;
+        shift: string | null;
+        medium: string | null;
+        capacity: number | null;
         class_teacher_id: number | null;
+        code: string | null;
         meta_json: Record<string, any> | null;
       }>
     ) {
@@ -253,7 +249,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
       this.saving = true;
       this.error = "";
       try {
-        const updated = await $api<SessionGrade>(`/v1/session-grades/${id}`, {
+        const updated = await $api<SessionGrade>(`/v1/session-classes/${id}`, {
           method: "PATCH",
           body: payload,
         });
@@ -262,15 +258,17 @@ export const useSessionGradeStore = defineStore("session-grades", {
         if (this.current?.id === id) this.current = updated;
         return updated;
       } catch (e: any) {
-        this.error =
-          e?.data?.message || e?.message || "Failed to update session grade";
+        this.error = e?.data?.message || e?.message || "Failed to update class";
         throw e;
       } finally {
         this.saving = false;
       }
     },
 
-    /* ----- API: DELETE /v1/session-grades/{id} ----- */
+    /* ---------------------------------------------
+     * DELETE (Owner suite)
+     * DELETE /v1/session-grades/{id}
+     * -------------------------------------------*/
     async remove(id: number) {
       const { $api } = useNuxtApp();
       this.removing = true;
@@ -282,8 +280,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
         this.items = this.items.filter((x) => x.id !== id);
         if (this.current?.id === id) this.current = null;
       } catch (e: any) {
-        this.error =
-          e?.data?.message || e?.message || "Failed to delete session grade";
+        this.error = e?.data?.message || e?.message || "Failed to delete class";
         throw e;
       } finally {
         this.removing = false;
