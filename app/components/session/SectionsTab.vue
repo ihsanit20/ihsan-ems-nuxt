@@ -8,6 +8,9 @@ import {
 } from "~/stores/session-grade";
 import { useSectionStore, type Section } from "~/stores/section";
 
+// Optional for h() sortable header
+const UButton = resolveComponent("UButton");
+
 const props = defineProps<{ sessionId: number; classId?: number | null }>();
 const emit = defineEmits<{ (e: "update:class-id", id: number | null): void }>();
 
@@ -29,7 +32,7 @@ const sectionRows = computed<Section[]>(() => {
   return [];
 });
 
-/** columns */
+/** Columns */
 const columns = ref<ColumnDef<Section, any>[]>([
   { accessorKey: "name", header: "Section" },
   { accessorKey: "code", header: "Code" },
@@ -86,35 +89,31 @@ const columns = ref<ColumnDef<Section, any>[]>([
   },
 ]);
 
-/** UI */
+/** Selected class (v-model from parent) */
 const selectedClassId = computed<number | null>({
   get: () => props.classId ?? null,
   set: (v) => emit("update:class-id", v),
 });
 
-const openAdd = ref(false);
-const openBulk = ref(false);
-
+/** Forms */
 const addForm = reactive({
   name: "" as string,
   code: null as string | null,
   capacity: null as number | null,
   class_teacher_id: null as number | null,
 });
-
 const bulkForm = reactive({
   names_input: "" as string,
   capacity: null as number | null,
   class_teacher_id: null as number | null,
 });
 
+/** Init */
 onMounted(async () => {
-  // Ensure classes are loaded for this session (for dropdown)
   classStore.setSession(props.sessionId);
   if (classRows.value.length === 0) {
     await classStore.fetchList();
   }
-  // Auto-pick first class if none
   if (!selectedClassId.value && classRows.value.length > 0) {
     selectedClassId.value = classRows.value[0].id;
   }
@@ -130,6 +129,7 @@ watch(selectedClassId, async (val) => {
   }
 });
 
+/** Actions */
 async function applyFilters() {
   if (!selectedClassId.value) return;
   await sectionStore.fetchList();
@@ -137,7 +137,6 @@ async function applyFilters() {
 function resetFilters() {
   sectionStore.resetFilters();
 }
-
 async function handleCreate() {
   if (!selectedClassId.value) return;
   if (!addForm.name.trim()) {
@@ -151,7 +150,6 @@ async function handleCreate() {
       capacity: addForm.capacity,
       class_teacher_id: addForm.class_teacher_id,
     });
-    openAdd.value = false;
     Object.assign(addForm, {
       name: "",
       code: null,
@@ -166,7 +164,6 @@ async function handleCreate() {
     });
   }
 }
-
 async function handleBulk() {
   if (!selectedClassId.value) return;
   const names = bulkForm.names_input
@@ -183,7 +180,6 @@ async function handleBulk() {
       capacity: bulkForm.capacity,
       class_teacher_id: bulkForm.class_teacher_id,
     });
-    openBulk.value = false;
     Object.assign(bulkForm, {
       names_input: "",
       capacity: null,
@@ -197,7 +193,6 @@ async function handleBulk() {
     });
   }
 }
-
 async function handleUpdate(row: Section) {
   try {
     await sectionStore.update(row.id, {
@@ -212,7 +207,6 @@ async function handleUpdate(row: Section) {
     toast.add({ title: e?.data?.message || "Update failed", color: "error" });
   }
 }
-
 async function handleReorder() {
   const items = sectionRows.value.map((s) => ({
     id: s.id,
@@ -258,20 +252,88 @@ async function handleReorder() {
       <UButton variant="subtle" @click="resetFilters">Reset</UButton>
 
       <div class="ms-auto flex gap-2">
-        <UButton
-          icon="i-lucide-plus"
-          color="primary"
-          :disabled="!selectedClassId"
-          @click="openAdd = true"
-          >Add Section</UButton
-        >
-        <UButton
-          icon="i-lucide-list-plus"
-          variant="soft"
-          :disabled="!selectedClassId"
-          @click="openBulk = true"
-          >Bulk Add</UButton
-        >
+        <!-- Add Section (doc pattern: trigger inside UModal) -->
+        <UModal title="Add Section">
+          <UButton
+            icon="i-lucide-plus"
+            color="primary"
+            :disabled="!selectedClassId"
+            >Add Section</UButton
+          >
+
+          <template #body>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <UInput v-model="addForm.name" placeholder="Name * e.g. A" />
+              <UInput v-model="addForm.code" placeholder="Code (optional)" />
+              <UInput
+                v-model.number="addForm.capacity"
+                type="number"
+                placeholder="Capacity"
+              />
+              <UInput
+                v-model.number="addForm.class_teacher_id"
+                type="number"
+                placeholder="Class Teacher ID"
+              />
+            </div>
+          </template>
+
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="subtle">Close</UButton>
+              <UButton
+                color="primary"
+                :loading="sectionStore.saving"
+                @click="handleCreate"
+                >Save</UButton
+              >
+            </div>
+          </template>
+        </UModal>
+
+        <!-- Bulk Add Sections (doc pattern) -->
+        <UModal title="Bulk Add Sections">
+          <UButton
+            icon="i-lucide-list-plus"
+            variant="soft"
+            :disabled="!selectedClassId"
+            >Bulk Add</UButton
+          >
+
+          <template #body>
+            <div class="space-y-3 pt-2">
+              <UInput
+                v-model="bulkForm.names_input"
+                placeholder="Names (A,B,C) or each on new line"
+              />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <UInput
+                  v-model.number="bulkForm.capacity"
+                  type="number"
+                  placeholder="Capacity (optional)"
+                />
+                <UInput
+                  v-model.number="bulkForm.class_teacher_id"
+                  type="number"
+                  placeholder="Class Teacher ID (optional)"
+                />
+              </div>
+            </div>
+          </template>
+
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="subtle">Close</UButton>
+              <UButton
+                color="primary"
+                :loading="sectionStore.saving"
+                @click="handleBulk"
+                >Create</UButton
+              >
+            </div>
+          </template>
+        </UModal>
+
         <UButton
           icon="i-lucide-arrow-up-n-arrow-down"
           variant="outline"
@@ -306,69 +368,5 @@ async function handleReorder() {
         />
       </div>
     </div>
-
-    <!-- Add modal -->
-    <UModal v-model="openAdd">
-      <UCard>
-        <div class="text-lg font-semibold mb-2">Add Section</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <UInput v-model="addForm.name" placeholder="Name * e.g. A" />
-          <UInput v-model="addForm.code" placeholder="Code (optional)" />
-          <UInput
-            v-model.number="addForm.capacity"
-            type="number"
-            placeholder="Capacity"
-          />
-          <UInput
-            v-model.number="addForm.class_teacher_id"
-            type="number"
-            placeholder="Class Teacher ID"
-          />
-        </div>
-        <div class="flex justify-end gap-2 mt-4">
-          <UButton variant="subtle" @click="openAdd = false">Cancel</UButton>
-          <UButton
-            color="primary"
-            :loading="sectionStore.saving"
-            @click="handleCreate"
-            >Save</UButton
-          >
-        </div>
-      </UCard>
-    </UModal>
-
-    <!-- Bulk modal -->
-    <UModal v-model="openBulk">
-      <UCard>
-        <div class="text-lg font-semibold mb-2">Bulk Add Sections</div>
-        <div class="space-y-3">
-          <UInput
-            v-model="bulkForm.names_input"
-            placeholder="Names (A,B,C) or each on new line"
-          />
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <UInput
-              v-model.number="bulkForm.capacity"
-              type="number"
-              placeholder="Capacity (optional)"
-            />
-            <UInput
-              v-model.number="bulkForm.class_teacher_id"
-              type="number"
-              placeholder="Class Teacher ID (optional)"
-            />
-          </div>
-        </div>
-        <div class="flex justify-end gap-2 mt-4">
-          <UButton variant="subtle" @click="openBulk = false">Cancel</UButton>
-          <UButton
-            color="primary"
-            :loading="sectionStore.saving"
-            @click="handleBulk"
-            >Create</UButton
-          >
-        </div>
-      </UCard>
-    </UModal>
   </UCard>
 </template>

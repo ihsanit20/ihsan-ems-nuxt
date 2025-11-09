@@ -7,9 +7,13 @@ definePageMeta({
 });
 
 import { useHead, useToast } from "#imports";
+import { computed, ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 useHead({ title: "Session Details" });
+
 const toast = useToast();
+const router = useRouter();
 const route = useRoute();
 
 const sessionStore = useSessionStore();
@@ -41,6 +45,10 @@ onMounted(async () => {
     toast.add({ title: "Failed to load session", color: "error" });
   }
 });
+
+function goBack() {
+  router.back();
+}
 </script>
 
 <template>
@@ -49,34 +57,36 @@ onMounted(async () => {
       <div
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
       >
-        <div>
-          <p class="text-sm text-neutral-500">Session</p>
-          <h1 class="text-xl font-semibold">{{ sessionTitle }}</h1>
-          <p class="text-xs text-neutral-500" v-if="sessionStore.current">
-            {{ sessionStore.current.start_date }} →
-            {{ sessionStore.current.end_date }} ·
-            <span
-              :class="
-                sessionStore.current.is_active
-                  ? 'text-green-600'
-                  : 'text-neutral-500'
-              "
-            >
-              {{ sessionStore.current.is_active ? "Active" : "Inactive" }}
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <UButton color="primary" @click="activeTab = 'classes'"
-            >Classes</UButton
-          >
+        <!-- Left: Back + Title -->
+        <div class="flex items-start gap-3">
           <UButton
-            color="primary"
-            variant="soft"
-            @click="activeTab = 'sections'"
-            >Sections</UButton
-          >
+            icon="i-lucide-arrow-left"
+            variant="ghost"
+            color="neutral"
+            aria-label="Go back"
+            @click="goBack"
+          />
+          <div>
+            <p class="text-sm text-neutral-500">Session</p>
+            <h1 class="text-xl font-semibold">{{ sessionTitle }}</h1>
+            <p class="text-xs text-neutral-500" v-if="sessionStore.current">
+              {{ sessionStore.current.start_date }} →
+              {{ sessionStore.current.end_date }} ·
+              <span
+                :class="
+                  sessionStore.current.is_active
+                    ? 'text-green-600'
+                    : 'text-neutral-500'
+                "
+              >
+                {{ sessionStore.current.is_active ? "Active" : "Inactive" }}
+              </span>
+            </p>
+          </div>
         </div>
+
+        <!-- Right: (removed the two redundant buttons) -->
+        <div />
       </div>
     </UCard>
 

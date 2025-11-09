@@ -1,4 +1,3 @@
-// app/stores/session-grade.ts
 import { defineStore } from "pinia";
 
 /* ---------- Types ---------- */
@@ -6,26 +5,18 @@ export type SessionGrade = {
   id: number;
   academic_session_id: number;
   grade_id: number;
-  shift?: string | null;
-  medium?: string | null;
-  capacity?: number | null;
-  class_teacher_id?: number | null;
-  code?: string | null;
-  meta_json?: Record<string, any> | null;
-  created_at?: string;
-  updated_at?: string;
 
   // eager (optional)
   grade?: { id: number; name: string; code?: string | null };
-  class_teacher?: { id: number; name: string } | null;
+
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type SessionGradeFilters = {
   // when listing by session
   session_id?: number; // required for /sessions/{session}/classes
   grade_id?: number;
-  shift?: string;
-  medium?: string;
   page?: number;
   per_page?: number;
 };
@@ -46,8 +37,6 @@ export const useSessionGradeStore = defineStore("session-grades", {
     // filters
     session_id: null as number | null, // picker on UI
     grade_id: undefined as number | undefined,
-    shift: "" as string,
-    medium: "" as string,
     page: 1,
     per_page: 15,
     total: 0,
@@ -64,8 +53,6 @@ export const useSessionGradeStore = defineStore("session-grades", {
       return {
         session_id: state.session_id ?? undefined,
         grade_id: state.grade_id,
-        shift: state.shift || undefined,
-        medium: state.medium || undefined,
         page: state.page,
         per_page: state.per_page,
       };
@@ -81,14 +68,6 @@ export const useSessionGradeStore = defineStore("session-grades", {
       this.grade_id = id;
       this.page = 1;
     },
-    setShift(s: string) {
-      this.shift = s;
-      this.page = 1;
-    },
-    setMedium(m: string) {
-      this.medium = m;
-      this.page = 1;
-    },
     setPage(p: number) {
       this.page = Math.max(1, p || 1);
     },
@@ -98,8 +77,6 @@ export const useSessionGradeStore = defineStore("session-grades", {
     },
     resetFilters() {
       this.grade_id = undefined;
-      this.shift = "";
-      this.medium = "";
       this.page = 1;
       this.per_page = 15;
     },
@@ -119,11 +96,14 @@ export const useSessionGradeStore = defineStore("session-grades", {
           `/v1/sessions/${this.session_id}/classes`,
           { query: { ...this.params, ...(extraQuery || {}) } }
         );
-        this.items = res.data || [];
-        this.page = res.current_page ?? 1;
-        this.per_page = res.per_page ?? this.per_page;
-        this.total = res.total ?? 0;
-        this.last_page = res.last_page ?? 1;
+
+        // NOTE: আপনার $publicApi যদি { data: paginator } রিটার্ন করে,
+        // তাহলে কম্পোনেন্টে normalize আছে — তবু এখানে common কেস রাখলাম।
+        this.items = (res as any)?.data || [];
+        this.page = (res as any)?.current_page ?? 1;
+        this.per_page = (res as any)?.per_page ?? this.per_page;
+        this.total = (res as any)?.total ?? 0;
+        this.last_page = (res as any)?.last_page ?? 1;
       } catch (e: any) {
         this.error =
           e?.data?.message || e?.message || "Failed to load session classes";
@@ -143,7 +123,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
       this.error = "";
       try {
         const data = await $publicApi<SessionGrade>(`/v1/session-grades/${id}`);
-        this.current = data;
+        this.current = data as any;
         return data;
       } catch (e: any) {
         this.error =
@@ -158,18 +138,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
      * CREATE single
      * POST /v1/sessions/{session}/classes
      * -------------------------------------------*/
-    async create(
-      sessionId: number,
-      payload: {
-        grade_id: number;
-        shift?: string | null;
-        medium?: string | null;
-        capacity?: number | null;
-        class_teacher_id?: number | null;
-        code?: string | null;
-        meta_json?: Record<string, any> | null;
-      }
-    ) {
+    async create(sessionId: number, payload: { grade_id: number }) {
       const { $api } = useNuxtApp();
       this.saving = true;
       this.error = "";
@@ -180,7 +149,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
         );
         // optimistic add when listing same session
         if (this.session_id === sessionId && this.page === 1)
-          this.items.unshift(created);
+          this.items.unshift(created as any);
         return created;
       } catch (e: any) {
         this.error =
@@ -195,16 +164,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
      * BULK open
      * POST /v1/sessions/{session}/classes/bulk-open
      * -------------------------------------------*/
-    async bulkOpen(
-      sessionId: number,
-      payload: {
-        grade_ids: number[];
-        shift?: string | null;
-        medium?: string | null;
-        capacity?: number | null;
-        class_teacher_id?: number | null;
-      }
-    ) {
+    async bulkOpen(sessionId: number, payload: { grade_ids: number[] }) {
       const { $api } = useNuxtApp();
       this.saving = true;
       this.error = "";
@@ -218,7 +178,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
         });
         // optimistic merge
         if (this.session_id === sessionId && this.page === 1) {
-          this.items = [...(res.items || []), ...this.items];
+          this.items = [...((res as any).items || []), ...this.items];
         }
         return res;
       } catch (e: any) {
@@ -231,20 +191,10 @@ export const useSessionGradeStore = defineStore("session-grades", {
     },
 
     /* ---------------------------------------------
-     * UPDATE
+     * UPDATE (grade_id only)
      * PATCH /v1/session-classes/{id}
      * -------------------------------------------*/
-    async update(
-      id: number,
-      payload: Partial<{
-        shift: string | null;
-        medium: string | null;
-        capacity: number | null;
-        class_teacher_id: number | null;
-        code: string | null;
-        meta_json: Record<string, any> | null;
-      }>
-    ) {
+    async update(id: number, payload: { grade_id: number }) {
       const { $api } = useNuxtApp();
       this.saving = true;
       this.error = "";
@@ -254,8 +204,8 @@ export const useSessionGradeStore = defineStore("session-grades", {
           body: payload,
         });
         const idx = this.items.findIndex((x) => x.id === id);
-        if (idx !== -1) this.items[idx] = updated;
-        if (this.current?.id === id) this.current = updated;
+        if (idx !== -1) this.items[idx] = updated as any;
+        if (this.current?.id === id) this.current = updated as any;
         return updated;
       } catch (e: any) {
         this.error = e?.data?.message || e?.message || "Failed to update class";
@@ -266,7 +216,7 @@ export const useSessionGradeStore = defineStore("session-grades", {
     },
 
     /* ---------------------------------------------
-     * DELETE (Owner suite)
+     * DELETE
      * DELETE /v1/session-grades/{id}
      * -------------------------------------------*/
     async remove(id: number) {
