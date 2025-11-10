@@ -332,15 +332,6 @@ function cardMenuItems(r: AcademicSession) {
             >
               Details
             </UButton>
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              icon="i-lucide-pencil"
-              @click="openEdit(s)"
-            >
-              Edit
-            </UButton>
           </div>
         </UCard>
       </div>
