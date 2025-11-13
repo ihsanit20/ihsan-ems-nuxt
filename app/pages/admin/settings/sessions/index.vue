@@ -273,18 +273,15 @@ function cardMenuItems(r: AcademicSession) {
         </div>
       </template>
 
-      <div
-        v-if="loading"
-        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
-      >
-        <UCard v-for="i in 6" :key="i">
+      <div v-if="loading" class="grid gap-4">
+        <UCard v-for="i in 3" :key="i">
           <USkeleton class="h-5 w-2/3 mb-2" />
           <USkeleton class="h-4 w-1/2 mb-4" />
           <USkeleton class="h-9 w-24" />
         </UCard>
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div v-else class="grid gap-4">
         <UCard
           v-for="s in items"
           :key="s.id"
@@ -330,7 +327,7 @@ function cardMenuItems(r: AcademicSession) {
               icon="i-lucide-eye"
               @click="openDetails(s)"
             >
-              Details
+              Manage Session
             </UButton>
           </div>
         </UCard>
