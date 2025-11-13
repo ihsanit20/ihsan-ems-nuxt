@@ -1,16 +1,8 @@
 <!-- components/session/SectionsPanel.vue -->
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch, onMounted } from "vue";
 import { useToast } from "#imports";
 import { useSectionStore, type Section } from "~/stores/section";
-
-/* ---------- Nuxt UI resolves ---------- */
-const UButton = resolveComponent("UButton");
-const UInput = resolveComponent("UInput");
-const UModal = resolveComponent("UModal");
-const UBadge = resolveComponent("UBadge");
-const USkeleton = resolveComponent("USkeleton");
-const UCard = resolveComponent("UCard");
 
 const props = defineProps<{ sessionGradeId: number }>();
 
@@ -33,6 +25,7 @@ type AddForm = {
   class_teacher_id: number | null;
   sort_order: number | null;
 };
+
 const addForm = reactive<AddForm>({
   name: "",
   code: null,
@@ -40,6 +33,7 @@ const addForm = reactive<AddForm>({
   class_teacher_id: null,
   sort_order: null,
 });
+
 function resetAdd() {
   addForm.name = "";
   addForm.code = null;
@@ -56,8 +50,10 @@ type EditForm = {
   class_teacher_id: number | null;
   sort_order: number | null;
 };
+
 const editForms = ref<Record<number, EditForm | undefined>>({});
 const hasForm = (id: number) => !!editForms.value[id];
+
 function ensureEditForm(row: Section) {
   editForms.value[row.id] = {
     name: row.name || "",
@@ -76,6 +72,7 @@ const openEditModals = ref<Record<number, boolean>>({});
 async function ensureScope() {
   sectionStore.setSessionGrade(props.sessionGradeId);
 }
+
 async function load() {
   try {
     await ensureScope();
@@ -85,7 +82,7 @@ async function load() {
   }
 }
 
-/* open/close helpers to avoid inline multi-statements */
+/* open/close helpers */
 function openAdd() {
   isAddModalOpen.value = true;
 }
@@ -131,7 +128,7 @@ async function handleUpdateModal(id: number) {
 
   try {
     await ensureScope();
-    await sectionStore.update(id, {
+    const updated = await sectionStore.update(id, {
       name: f.name,
       code: f.code,
       capacity: f.capacity,
@@ -139,14 +136,15 @@ async function handleUpdateModal(id: number) {
       sort_order: f.sort_order,
     });
 
-    // optimistic UI
+    // optional local sync (store already updates items)
     const r = rows.value.find((x) => x.id === id);
     if (r) {
-      r.name = f.name;
-      r.code = f.code;
-      r.capacity = f.capacity as any;
-      r.class_teacher_id = f.class_teacher_id as any;
-      r.sort_order = f.sort_order as any;
+      r.name = updated.name;
+      r.code = updated.code;
+      r.capacity = updated.capacity;
+      r.class_teacher_id = updated.class_teacher_id;
+      r.sort_order = updated.sort_order;
+      r.class_teacher = updated.class_teacher;
     }
 
     closeEdit(id);
@@ -172,6 +170,7 @@ async function removeOne(id: number) {
 
 /* ---------- lifecycle ---------- */
 onMounted(load);
+
 watch(
   () => props.sessionGradeId,
   () => {
@@ -186,16 +185,7 @@ watch(
   <div class="space-y-3">
     <!-- Top actions -->
     <div class="flex flex-wrap items-center gap-2">
-      <!-- Add Modal -->
-      <UButton
-        icon="i-lucide-plus"
-        color="primary"
-        variant="solid"
-        label="Add Section"
-        @click="openAdd"
-      />
-
-      <!-- FIXED: v-model:open -->
+      <!-- ADD modal -->
       <UModal
         v-model:open="isAddModalOpen"
         title="Add Section"
@@ -276,12 +266,15 @@ watch(
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-sm text-neutral-500">Section</span>
               <span class="font-medium">{{ s.name }}</span>
+
               <span v-if="s.code" class="text-neutral-400">•</span>
               <span v-if="s.code" class="text-neutral-600">{{ s.code }}</span>
+
               <span v-if="s.capacity != null" class="text-neutral-400">•</span>
               <span v-if="s.capacity != null" class="text-neutral-600">
                 Cap: {{ s.capacity }}
               </span>
+
               <span v-if="s.class_teacher?.name" class="text-neutral-400"
                 >•</span
               >
@@ -300,7 +293,7 @@ watch(
                 @click="openEdit(s)"
               />
 
-              <!-- FIXED: v-model:open per row -->
+              <!-- Edit modal per row -->
               <UModal
                 v-model:open="openEditModals[s.id]"
                 :title="`Edit Section #${s.id}`"
@@ -359,8 +352,8 @@ watch(
               <UButton
                 size="xs"
                 variant="ghost"
-                color="red"
-                :loading="sectionStore.saving"
+                color="warning"
+                :loading="sectionStore.removing"
                 icon="i-lucide-trash-2"
                 @click="removeOne(s.id)"
               >
@@ -376,6 +369,16 @@ watch(
       <UCard v-else class="text-center py-10">
         <p class="text-sm text-neutral-500">No sections yet.</p>
       </UCard>
+
+      <div class="flex justify-center">
+        <UButton
+          icon="i-lucide-plus"
+          color="primary"
+          variant="outline"
+          label="Add Section"
+          @click="openAdd"
+        />
+      </div>
     </template>
   </div>
 </template>

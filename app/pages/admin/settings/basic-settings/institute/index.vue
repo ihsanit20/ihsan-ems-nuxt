@@ -13,13 +13,19 @@ useHead({ title: "Institute Setup" });
 
 const toast = useToast();
 const { $api } = useNuxtApp();
+
 const institute = useInstituteStore();
+const { saving } = storeToRefs(institute);
+
+const router = useRouter();
+const goBack = () => router.back();
 
 const brand = reactive<{ name: string; logoUrl: string | null }>({
   name: "",
   logoUrl: null,
 });
 
+// Form state
 const form = reactive<InstituteProfile>({
   names: { en: "", bn: "", ar: "" },
   contact: {
@@ -32,10 +38,11 @@ const form = reactive<InstituteProfile>({
 });
 
 const loading = ref(true);
-const saving = computed(() => institute.saving);
 const isEditing = ref(false);
 
 const errors = reactive<Record<string, string>>({});
+
+/* ---------- helpers ---------- */
 
 function resetFormFromStore() {
   const p = institute.profile;
@@ -74,27 +81,36 @@ async function loadBrand() {
 function validate(): boolean {
   Object.keys(errors).forEach((k) => delete errors[k]);
 
+  // Address required
   if (!form.contact.address || !form.contact.address.trim()) {
     errors["contact.address"] = "ঠিকানা প্রয়োজন";
   }
+
+  // Email basic validation
   const email = form.contact.email?.trim();
   if (email && !/^\S+@\S+\.\S+$/.test(email)) {
     errors["contact.email"] = "ইমেইল ঠিক নয়";
   }
+
+  // URL ফিল্ডগুলো চেক
   const urlFields: Array<[string, string | null | undefined]> = [
     ["contact.website", form.contact.website ?? ""],
     ["contact.social.facebook", form.contact.social?.facebook ?? ""],
     ["contact.social.youtube", form.contact.social?.youtube ?? ""],
     ["contact.social.whatsapp", form.contact.social?.whatsapp ?? ""],
   ];
+
   for (const [key, val] of urlFields) {
     const v = (val || "").toString().trim();
     if (v && !/^https?:\/\//i.test(v)) {
       errors[key] = "পূর্ণ URL দিন, যেমন https://example.com";
     }
   }
+
   return Object.keys(errors).length === 0;
 }
+
+/* ---------- actions ---------- */
 
 async function handleSave() {
   if (!validate()) {
@@ -102,9 +118,11 @@ async function handleSave() {
       title: "ফর্মে ভুল আছে",
       description: "চেক করে আবার চেষ্টা করুন",
       color: "error",
+      icon: "i-heroicons-exclamation-triangle",
     });
     return;
   }
+
   try {
     await institute.updateProfile({
       names: {
@@ -114,13 +132,27 @@ async function handleSave() {
       },
       contact: form.contact,
     });
-    toast.add({ title: "সেভ হয়েছে", color: "success" });
-    isEditing.value = false; // ✅ সেভ হলে এডিট মোড বন্ধ
+
+    toast.add({
+      title: "সেভ হয়েছে",
+      description: "ইনস্টিটিউট প্রোফাইল আপডেট করা হয়েছে",
+      color: "success",
+      icon: "i-heroicons-check-circle",
+    });
+
+    isEditing.value = false;
   } catch (e: any) {
+    const msg =
+      e?.data?.message ||
+      e?.response?.data?.message ||
+      e?.message ||
+      "কিছু ভুল হয়েছে";
+
     toast.add({
       title: "সেভ ব্যর্থ",
-      description: e?.data?.message || e?.message || "কিছু ভুল হয়েছে",
+      description: msg,
       color: "error",
+      icon: "i-heroicons-x-circle",
     });
   }
 }
@@ -128,17 +160,22 @@ async function handleSave() {
 function handleCancel() {
   resetFormFromStore();
   Object.keys(errors).forEach((k) => delete errors[k]);
-  isEditing.value = false; // ✅ ক্যানসেলে এডিট মোড বন্ধ
+  isEditing.value = false;
 }
 
 function handlePrimaryClick() {
   if (!isEditing.value) {
-    isEditing.value = true; // Edit → enable fields
+    // Edit mode on
+    isEditing.value = true;
   } else {
-    // Save
-    if (!saving.value) handleSave();
+    // Save (double-click protection with saving flag)
+    if (!saving.value) {
+      handleSave();
+    }
   }
 }
+
+/* ---------- lifecycle ---------- */
 
 onMounted(async () => {
   try {
@@ -148,9 +185,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-const router = useRouter();
-const goBack = () => router.back();
 </script>
 
 <template>
@@ -220,7 +254,7 @@ const goBack = () => router.back();
       </div>
     </UCard>
 
-    <!-- Content -->
+    <!-- Loading skeleton -->
     <div v-if="loading" class="grid gap-4">
       <UCard>
         <USkeleton class="h-6 w-1/3 mb-3" />
@@ -233,6 +267,7 @@ const goBack = () => router.back();
       </UCard>
     </div>
 
+    <!-- Content -->
     <div v-else class="grid gap-4">
       <!-- Names (optional) -->
       <UCard>

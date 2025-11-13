@@ -275,9 +275,11 @@ function cardMenuItems(r: AcademicSession) {
 
       <div v-if="loading" class="grid gap-4">
         <UCard v-for="i in 3" :key="i">
-          <USkeleton class="h-5 w-2/3 mb-2" />
-          <USkeleton class="h-4 w-1/2 mb-4" />
-          <USkeleton class="h-9 w-24" />
+          <div class="flex flex-col md:flex-row gap-4">
+            <USkeleton class="h-6 w-2/3" />
+            <USkeleton class="h-6 w-1/2" />
+            <USkeleton class="h-6 w-1/4" />
+          </div>
         </UCard>
       </div>
 
@@ -289,9 +291,37 @@ function cardMenuItems(r: AcademicSession) {
         >
           <!-- Card header: name + menu -->
           <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <h3 class="font-medium truncate">{{ s.name }}</h3>
-              <p class="text-xs text-gray-500">#{{ s.id }}</p>
+            <div class="flex flex-wrap gap-4">
+              <h3 class="font-medium truncate text-2xl">
+                <span class="px-2 p-1 m-2 rounded-lg bg-gray-100 border">{{
+                  s.id
+                }}</span
+                >{{ s.name }}
+              </h3>
+              <UBadge
+                :label="s.is_active ? 'Active' : 'Inactive'"
+                :color="s.is_active ? 'primary' : 'neutral'"
+              />
+              <span class="px-2 py-1 rounded border bg-white/70">
+                {{ fmtDate(s.start_date) }} → {{ fmtDate(s.end_date) }}
+              </span>
+              <UButton
+                color="primary"
+                variant="solid"
+                size="sm"
+                icon="i-lucide-layers"
+                @click="openDetails(s)"
+              >
+                Manage Session Grades
+              </UButton>
+              <UButton
+                color="primary"
+                variant="solid"
+                size="sm"
+                icon="i-lucide-book-copy"
+              >
+                Manage Session Subjects
+              </UButton>
             </div>
 
             <UDropdownMenu
@@ -305,30 +335,6 @@ function cardMenuItems(r: AcademicSession) {
                 aria-label="Actions"
               />
             </UDropdownMenu>
-          </div>
-
-          <!-- Meta: dates + active -->
-          <div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
-            <span class="px-2 py-1 rounded border bg-white/70">
-              {{ fmtDate(s.start_date) }} → {{ fmtDate(s.end_date) }}
-            </span>
-            <UBadge
-              :label="s.is_active ? 'Active' : 'Inactive'"
-              :color="s.is_active ? 'primary' : 'neutral'"
-            />
-          </div>
-
-          <!-- Footer: quick actions -->
-          <div class="mt-4 flex items-center gap-2">
-            <UButton
-              color="primary"
-              variant="solid"
-              size="sm"
-              icon="i-lucide-eye"
-              @click="openDetails(s)"
-            >
-              Manage Session
-            </UButton>
           </div>
         </UCard>
       </div>

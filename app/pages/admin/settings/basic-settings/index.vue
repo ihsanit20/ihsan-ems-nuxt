@@ -31,6 +31,14 @@ const tiles = [
     to: "/admin/settings/basic-settings/grades",
     primary: "Manage",
   },
+  {
+    key: "subjects",
+    title: "Subjects (Master)",
+    desc: "Grade-based subject master data: name, code, order, status.",
+    icon: "i-lucide-book-copy",
+    to: "/admin/settings/basic-settings/subjects",
+    primary: "Manage",
+  },
 ];
 </script>
 
