@@ -10,12 +10,9 @@ const toast = useToast();
 const sectionStore = useSectionStore();
 
 /* ---------- list ---------- */
-const rows = computed<Section[]>(() => {
-  const v: any = sectionStore.items as any;
-  if (Array.isArray(v)) return v;
-  if (v?.data && Array.isArray(v.data)) return v.data;
-  return [];
-});
+const rows = computed<Section[]>(() =>
+  sectionStore.itemsForSession(props.sessionGradeId)
+);
 
 /* ---------- ADD form (uncontrolled modal) ---------- */
 type AddForm = {
@@ -69,15 +66,11 @@ const isAddModalOpen = ref(false);
 const openEditModals = ref<Record<number, boolean>>({});
 
 /* ---------- helpers ---------- */
-async function ensureScope() {
-  sectionStore.setSessionGrade(props.sessionGradeId);
-}
-
 async function load() {
   try {
-    await ensureScope();
-    await sectionStore.fetchList();
-  } catch {
+    await sectionStore.fetchListBySession(props.sessionGradeId);
+  } catch (e: any) {
+    console.error("Failed to load sections:", e);
     toast.add({ title: "Failed to load sections", color: "error" });
   }
 }
@@ -104,8 +97,8 @@ async function handleCreate() {
     return;
   }
   try {
-    await ensureScope();
     await sectionStore.create({
+      session_grade_id: props.sessionGradeId,
       name: addForm.name.trim(),
       code: addForm.code,
       capacity: addForm.capacity,
@@ -115,7 +108,7 @@ async function handleCreate() {
     resetAdd();
     closeAdd();
     toast.add({ title: "Section created" });
-    await load(); // reload to reflect new row
+    // store ইতিমধ্যে সঠিক session list এ prepend করে, reload এর দরকার নাই
   } catch (e: any) {
     toast.add({ title: e?.data?.message || "Create failed", color: "error" });
   }
@@ -127,7 +120,6 @@ async function handleUpdateModal(id: number) {
   if (!f) return;
 
   try {
-    await ensureScope();
     const updated = await sectionStore.update(id, {
       name: f.name,
       code: f.code,
@@ -136,7 +128,7 @@ async function handleUpdateModal(id: number) {
       sort_order: f.sort_order,
     });
 
-    // optional local sync (store already updates items)
+    // local form sync (store already updated)
     const r = rows.value.find((x) => x.id === id);
     if (r) {
       r.name = updated.name;
@@ -157,12 +149,10 @@ async function handleUpdateModal(id: number) {
 /* ---------- delete ---------- */
 async function removeOne(id: number) {
   try {
-    await ensureScope();
     await sectionStore.remove(id);
     if (editForms.value[id]) delete editForms.value[id];
     if (openEditModals.value[id]) delete openEditModals.value[id];
     toast.add({ title: "Deleted" });
-    await load();
   } catch (e: any) {
     toast.add({ title: e?.data?.message || "Delete failed", color: "error" });
   }
@@ -173,11 +163,14 @@ onMounted(load);
 
 watch(
   () => props.sessionGradeId,
-  () => {
-    editForms.value = {};
-    openEditModals.value = {};
-    load();
-  }
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      editForms.value = {};
+      openEditModals.value = {};
+      load();
+    }
+  },
+  { immediate: false }
 );
 </script>
 
@@ -228,12 +221,14 @@ watch(
           />
         </template>
       </UModal>
+    </div>
 
-      <div class="ms-auto">
-        <UBadge variant="soft">
-          {{ rows.length }} {{ rows.length === 1 ? "section" : "sections" }}
-        </UBadge>
-      </div>
+    <!-- Error display -->
+    <div
+      v-if="sectionStore.error"
+      class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"
+    >
+      {{ sectionStore.error }}
     </div>
 
     <!-- Loading skeleton -->
@@ -261,7 +256,7 @@ watch(
     <!-- Rows -->
     <template v-else>
       <div v-if="rows.length" class="space-y-2">
-        <div v-for="s in rows" :key="s.id" class="rounded-xl border p-3">
+        <div v-for="s in rows" :key="s.id" class="rounded-xl p-3 bg-gray-100">
           <div class="flex items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-sm text-neutral-500">Section</span>
