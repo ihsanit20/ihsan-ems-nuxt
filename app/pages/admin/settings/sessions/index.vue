@@ -88,6 +88,10 @@ const openGrades = (r: AcademicSession) =>
 const openSubjects = (r: AcademicSession) =>
   router.push(`/admin/settings/sessions/${r.id}/subjects`);
 
+// ✅ নতুন: Session Fees পেজে যাওয়ার বাটন
+const openFees = (r: AcademicSession) =>
+  router.push(`/admin/settings/sessions/${r.id}/fees`);
+
 /* ---------------- Add/Edit modal (same as before) ---------------- */
 const formOpen = ref(false);
 const isEdit = ref(false);
@@ -258,12 +262,15 @@ function cardMenuItems(r: AcademicSession) {
           variant="soft"
           icon="i-lucide-rotate-cw"
           @click="store.fetchList()"
-          >Refresh</UButton
         >
+          Refresh
+        </UButton>
       </div>
 
       <div class="flex items-center gap-2">
-        <UButton icon="i-lucide-plus" @click="openCreate">New Session</UButton>
+        <UButton icon="i-lucide-plus" @click="openCreate">
+          New Session
+        </UButton>
       </div>
     </div>
 
@@ -296,10 +303,10 @@ function cardMenuItems(r: AcademicSession) {
           <div class="flex items-start justify-between gap-2">
             <div class="flex flex-wrap gap-4">
               <h3 class="font-medium truncate text-2xl">
-                <span class="px-2 p-1 mr-2 rounded-lg bg-gray-100 border">{{
-                  s.id
-                }}</span
-                >{{ s.name }}
+                <span class="px-2 p-1 mr-2 rounded-lg bg-gray-100 border">
+                  {{ s.id }}
+                </span>
+                {{ s.name }}
               </h3>
               <UBadge
                 :label="s.is_active ? 'Active' : 'Inactive'"
@@ -308,6 +315,8 @@ function cardMenuItems(r: AcademicSession) {
               <span class="px-2 py-1 rounded border bg-white/70">
                 {{ fmtDate(s.start_date) }} → {{ fmtDate(s.end_date) }}
               </span>
+
+              <!-- ✅ Existing buttons -->
               <UButton
                 color="primary"
                 variant="solid"
@@ -317,6 +326,7 @@ function cardMenuItems(r: AcademicSession) {
               >
                 Manage Session Grades
               </UButton>
+
               <UButton
                 color="primary"
                 variant="solid"
@@ -325,6 +335,17 @@ function cardMenuItems(r: AcademicSession) {
                 @click="openSubjects(s)"
               >
                 Manage Session Subjects
+              </UButton>
+
+              <!-- ✅ New: Session Fees button -->
+              <UButton
+                color="primary"
+                variant="solid"
+                size="sm"
+                icon="i-lucide-receipt"
+                @click="openFees(s)"
+              >
+                Manage Session Fees
               </UButton>
             </div>
 
@@ -388,9 +409,9 @@ function cardMenuItems(r: AcademicSession) {
           <UFormField label="Status" name="is_active">
             <div class="flex items-center gap-2">
               <USwitch v-model="form.is_active" />
-              <span class="text-sm">{{
-                form.is_active ? "Active" : "Inactive"
-              }}</span>
+              <span class="text-sm">
+                {{ form.is_active ? "Active" : "Inactive" }}
+              </span>
             </div>
           </UFormField>
         </div>
