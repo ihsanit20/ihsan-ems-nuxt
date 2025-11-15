@@ -82,8 +82,11 @@ function toDateInput(v?: string) {
 }
 
 /* ---------------- Navigation ---------------- */
-const openDetails = (r: AcademicSession) =>
-  router.push(`/admin/settings/sessions/${r.id}/details`);
+const openGrades = (r: AcademicSession) =>
+  router.push(`/admin/settings/sessions/${r.id}/grades`);
+
+const openSubjects = (r: AcademicSession) =>
+  router.push(`/admin/settings/sessions/${r.id}/subjects`);
 
 /* ---------------- Add/Edit modal (same as before) ---------------- */
 const formOpen = ref(false);
@@ -213,7 +216,7 @@ async function toggleActive(row: AcademicSession) {
 function cardMenuItems(r: AcademicSession) {
   return [
     { type: "label", label: "Actions" },
-    { label: "Details", icon: "i-lucide-eye", onSelect: () => openDetails(r) },
+    { label: "Details", icon: "i-lucide-eye", onSelect: () => openGrades(r) },
     { label: "Edit", icon: "i-lucide-pencil", onSelect: () => openEdit(r) },
     {
       label: r.is_active ? "Deactivate" : "Activate",
@@ -310,7 +313,7 @@ function cardMenuItems(r: AcademicSession) {
                 variant="solid"
                 size="sm"
                 icon="i-lucide-layers"
-                @click="openDetails(s)"
+                @click="openGrades(s)"
               >
                 Manage Session Grades
               </UButton>
@@ -319,6 +322,7 @@ function cardMenuItems(r: AcademicSession) {
                 variant="solid"
                 size="sm"
                 icon="i-lucide-book-copy"
+                @click="openSubjects(s)"
               >
                 Manage Session Subjects
               </UButton>
