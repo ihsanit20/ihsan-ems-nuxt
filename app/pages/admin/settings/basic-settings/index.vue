@@ -39,6 +39,14 @@ const tiles = [
     to: "/admin/settings/basic-settings/subjects",
     primary: "Manage",
   },
+  {
+    key: "fees",
+    title: "Fees (Master)",
+    desc: "Fee",
+    icon: "i-lucide-banknote",
+    to: "/admin/settings/basic-settings/fees",
+    primary: "Manage",
+  },
 ];
 </script>
 

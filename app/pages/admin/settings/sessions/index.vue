@@ -296,7 +296,7 @@ function cardMenuItems(r: AcademicSession) {
           <div class="flex items-start justify-between gap-2">
             <div class="flex flex-wrap gap-4">
               <h3 class="font-medium truncate text-2xl">
-                <span class="px-2 p-1 m-2 rounded-lg bg-gray-100 border">{{
+                <span class="px-2 p-1 mr-2 rounded-lg bg-gray-100 border">{{
                   s.id
                 }}</span
                 >{{ s.name }}
