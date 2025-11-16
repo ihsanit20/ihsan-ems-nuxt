@@ -131,21 +131,21 @@ async function submit() {
 
       <div class="space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <UFormGroup label="Session & Class" required>
+          <UFormField label="Session & Class" required>
             <USelect
               v-model="form.session_grade_id"
               :loading="loadingSessions"
               :options="sessionOptions"
               placeholder="Select session and class"
             />
-          </UFormGroup>
-          <UFormGroup label="Applicant Name" required>
+          </UFormField>
+          <UFormField label="Applicant Name" required>
             <UInput
               v-model="form.applicant_name"
               placeholder="Applicant full name"
             />
-          </UFormGroup>
-          <UFormGroup label="Gender">
+          </UFormField>
+          <UFormField label="Gender">
             <USelect
               v-model="form.gender"
               :options="[
@@ -154,56 +154,56 @@ async function submit() {
                 { label: 'Other', value: 'other' },
               ]"
             />
-          </UFormGroup>
-          <UFormGroup label="Date of Birth">
+          </UFormField>
+          <UFormField label="Date of Birth">
             <UInput v-model="form.date_of_birth" type="date" />
-          </UFormGroup>
-          <UFormGroup label="Student Phone">
+          </UFormField>
+          <UFormField label="Student Phone">
             <UInput v-model="form.student_phone" placeholder="01XXXXXXXXX" />
-          </UFormGroup>
-          <UFormGroup label="Student Email">
+          </UFormField>
+          <UFormField label="Student Email">
             <UInput
               v-model="form.student_email"
               type="email"
               placeholder="name@example.com"
             />
-          </UFormGroup>
+          </UFormField>
         </div>
 
         <UDivider label="Parents & Guardian" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="space-y-4">
-            <UFormGroup label="Father's Name"
+            <UFormField label="Father's Name"
               ><UInput v-model="form.father_name"
-            /></UFormGroup>
-            <UFormGroup label="Phone"
+            /></UFormField>
+            <UFormField label="Phone"
               ><UInput v-model="form.father_phone"
-            /></UFormGroup>
-            <UFormGroup label="Occupation"
+            /></UFormField>
+            <UFormField label="Occupation"
               ><UInput v-model="form.father_occupation"
-            /></UFormGroup>
+            /></UFormField>
           </div>
           <div class="space-y-4">
-            <UFormGroup label="Mother's Name"
+            <UFormField label="Mother's Name"
               ><UInput v-model="form.mother_name"
-            /></UFormGroup>
-            <UFormGroup label="Phone"
+            /></UFormField>
+            <UFormField label="Phone"
               ><UInput v-model="form.mother_phone"
-            /></UFormGroup>
-            <UFormGroup label="Occupation"
+            /></UFormField>
+            <UFormField label="Occupation"
               ><UInput v-model="form.mother_occupation"
-            /></UFormGroup>
+            /></UFormField>
           </div>
           <div class="space-y-4">
-            <UFormGroup label="Guardian Name"
+            <UFormField label="Guardian Name"
               ><UInput v-model="form.guardian_name"
-            /></UFormGroup>
-            <UFormGroup label="Phone"
+            /></UFormField>
+            <UFormField label="Phone"
               ><UInput v-model="form.guardian_phone"
-            /></UFormGroup>
-            <UFormGroup label="Relation"
+            /></UFormField>
+            <UFormField label="Relation"
               ><UInput v-model="form.guardian_relation"
-            /></UFormGroup>
+            /></UFormField>
           </div>
         </div>
 
@@ -212,54 +212,54 @@ async function submit() {
           <div class="space-y-4">
             <h3 class="font-medium">Present Address</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="House"
+              <UFormField label="House"
                 ><UInput v-model="form.present_address.house"
-              /></UFormGroup>
-              <UFormGroup label="Road"
+              /></UFormField>
+              <UFormField label="Road"
                 ><UInput v-model="form.present_address.road"
-              /></UFormGroup>
-              <UFormGroup label="Village"
+              /></UFormField>
+              <UFormField label="Village"
                 ><UInput v-model="form.present_address.village"
-              /></UFormGroup>
-              <UFormGroup label="Post Office"
+              /></UFormField>
+              <UFormField label="Post Office"
                 ><UInput v-model="form.present_address.post_office"
-              /></UFormGroup>
-              <UFormGroup label="Upazila"
+              /></UFormField>
+              <UFormField label="Upazila"
                 ><UInput v-model="form.present_address.upazila"
-              /></UFormGroup>
-              <UFormGroup label="District"
+              /></UFormField>
+              <UFormField label="District"
                 ><UInput v-model="form.present_address.district"
-              /></UFormGroup>
+              /></UFormField>
             </div>
           </div>
           <div class="space-y-4">
             <h3 class="font-medium">Permanent Address</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="House"
+              <UFormField label="House"
                 ><UInput v-model="form.permanent_address.house"
-              /></UFormGroup>
-              <UFormGroup label="Road"
+              /></UFormField>
+              <UFormField label="Road"
                 ><UInput v-model="form.permanent_address.road"
-              /></UFormGroup>
-              <UFormGroup label="Village"
+              /></UFormField>
+              <UFormField label="Village"
                 ><UInput v-model="form.permanent_address.village"
-              /></UFormGroup>
-              <UFormGroup label="Post Office"
+              /></UFormField>
+              <UFormField label="Post Office"
                 ><UInput v-model="form.permanent_address.post_office"
-              /></UFormGroup>
-              <UFormGroup label="Upazila"
+              /></UFormField>
+              <UFormField label="Upazila"
                 ><UInput v-model="form.permanent_address.upazila"
-              /></UFormGroup>
-              <UFormGroup label="District"
+              /></UFormField>
+              <UFormField label="District"
                 ><UInput v-model="form.permanent_address.district"
-              /></UFormGroup>
+              /></UFormField>
             </div>
           </div>
         </div>
 
         <UDivider label="Other Details" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <UFormGroup label="Residential Type">
+          <UFormField label="Residential Type">
             <USelect
               v-model="form.residential_type"
               :options="[
@@ -267,16 +267,16 @@ async function submit() {
                 { label: 'Residential', value: 'residential' },
               ]"
             />
-          </UFormGroup>
-          <UFormGroup label="Previous Institution"
+          </UFormField>
+          <UFormField label="Previous Institution"
             ><UInput v-model="form.previous_institution_name"
-          /></UFormGroup>
-          <UFormGroup label="Previous Class"
+          /></UFormField>
+          <UFormField label="Previous Class"
             ><UInput v-model="form.previous_class"
-          /></UFormGroup>
-          <UFormGroup label="Previous Result"
+          /></UFormField>
+          <UFormField label="Previous Result"
             ><UInput v-model="form.previous_result"
-          /></UFormGroup>
+          /></UFormField>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">

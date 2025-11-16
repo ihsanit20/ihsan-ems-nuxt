@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { h } from "vue";
+import type { TableColumn, SelectItem } from "@nuxt/ui";
 
 definePageMeta({
   layout: "admin",
@@ -21,9 +23,9 @@ const router = useRouter();
 
 // Local filters bound to store
 const filters = reactive({
-  academic_session_id: null as number | null,
-  session_grade_id: null as number | null,
-  status: "" as "" | "pending" | "accepted" | "rejected" | "admitted",
+  academic_session_id: undefined as number | undefined,
+  session_grade_id: undefined as number | undefined,
+  status: undefined as undefined | "pending" | "accepted" | "rejected" | "admitted",
   search: "",
 });
 
@@ -60,7 +62,7 @@ watch(
     apps.setSessionId(v || null);
     if (!v) apps.setSessionGradeId(null);
     // Clear class if session changed
-    filters.session_grade_id = null;
+    filters.session_grade_id = undefined;
     apps.setPage(1);
     loadList();
   }
@@ -78,7 +80,7 @@ watch(
 watch(
   () => filters.status,
   (v) => {
-    apps.setStatus(v || "");
+    apps.setStatus(v ?? "");
     apps.setPage(1);
     loadList();
   }
@@ -97,19 +99,19 @@ watch(
   }
 );
 
-const sessionOptions = computed(() =>
+const sessionOptions = computed<SelectItem[]>(() =>
   (sessionItems.value || []).map((s) => ({ label: s.name, value: s.id }))
 );
 
-const statusOptions = [
-  { label: "All", value: "" },
+const statusItems: SelectItem[] = [
+  { label: "All", value: null },
   { label: "Pending", value: "pending" },
   { label: "Accepted", value: "accepted" },
   { label: "Admitted", value: "admitted" },
   { label: "Rejected", value: "rejected" },
 ];
 
-const classOptions = computed(() => {
+const classOptions = computed<SelectItem[]>(() => {
   const list = meta.value?.session_grades || [];
   return list
     .filter(
@@ -155,6 +157,86 @@ function onPageChange(p: number) {
   apps.setPage(p || 1);
   loadList();
 }
+
+/* ---------------- UTable (Nuxt UI v4.1.0) columns ---------------- */
+const UButton = resolveComponent("UButton");
+const UBadge = resolveComponent("UBadge");
+
+type Row = any;
+
+const columns: TableColumn<Row>[] = [
+  {
+    id: "application_no",
+    accessorKey: "application_no",
+    header: "Application No",
+  },
+  {
+    id: "applicant_name",
+    accessorKey: "applicant_name",
+    header: "Applicant Name",
+  },
+  {
+    id: "session",
+    header: "Session",
+    cell: ({ row }) => row.original?.session?.name || "—",
+  },
+  {
+    id: "grade",
+    header: "Class",
+    cell: ({ row }) =>
+      row.original?.session_grade?.grade?.name ||
+      `#${row.original?.session_grade_id}`,
+  },
+  {
+    id: "guardian_phone",
+    accessorKey: "guardian_phone",
+    header: "Guardian Phone",
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: ({ row }) =>
+      h(
+        UBadge as any,
+        { color: statusColor(row.original?.status), variant: "soft" },
+        () => String(row.original?.status || "").toUpperCase()
+      ),
+  },
+  {
+    id: "created_at",
+    header: "Created",
+    cell: ({ row }) => formatDate(row.original?.created_at),
+  },
+  {
+    id: "actions",
+    header: "",
+    enableSorting: false,
+    cell: ({ row }) =>
+      h("div", { class: "flex gap-2" }, [
+        h(
+          UButton as any,
+          {
+            size: "xs",
+            color: "primary",
+            icon: "i-lucide-eye",
+            onClick: () => goView(row.original),
+          },
+          { default: () => "View" }
+        ),
+        h(
+          UButton as any,
+          {
+            size: "xs",
+            color: "secondary",
+            variant: "outline",
+            icon: "i-lucide-check",
+            onClick: () => goView(row.original),
+          },
+          { default: () => "Admit" }
+        ),
+      ]),
+  },
+];
 </script>
 
 <template>
@@ -184,47 +266,49 @@ function onPageChange(p: number) {
     <!-- Filters -->
     <UCard class="mb-4">
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <UFormGroup label="Session">
+        <UFormField label="Session">
           <USelect
             v-model="filters.academic_session_id"
-            :options="sessionOptions"
+            :items="sessionOptions"
             placeholder="All"
             :disabled="loading || sessionLoading"
+            :popper="{ strategy: 'fixed' }"
             clearable
           />
-        </UFormGroup>
-        <UFormGroup label="Class">
+        </UFormField>
+        <UFormField label="Class">
           <USelect
             v-model="filters.session_grade_id"
-            :options="classOptions"
+            :items="classOptions"
             placeholder="All"
             :disabled="loading || !meta?.session_grades?.length"
+            :popper="{ strategy: 'fixed' }"
             clearable
           />
-        </UFormGroup>
-        <UFormGroup label="Status">
+        </UFormField>
+        <UFormField label="Status">
           <USelect
             v-model="filters.status"
-            :options="statusOptions"
+            :items="statusItems"
             :disabled="loading"
           />
-        </UFormGroup>
-        <UFormGroup label="Search">
+        </UFormField>
+        <UFormField label="Search">
           <UInput
             v-model="filters.search"
             placeholder="Name / Phone / Application No"
             :disabled="loading"
           />
-        </UFormGroup>
+        </UFormField>
         <div class="flex items-end">
           <UButton
             color="secondary"
             variant="outline"
             :disabled="loading"
             @click="
-              filters.academic_session_id = null;
-              filters.session_grade_id = null;
-              filters.status = '';
+              filters.academic_session_id = undefined;
+              filters.session_grade_id = undefined;
+              filters.status = undefined;
               filters.search = '';
               apps.resetFilters();
               loadList();
@@ -251,59 +335,14 @@ function onPageChange(p: number) {
       </template>
 
       <UTable
-        :rows="(items as any)"
-        :columns="[
-          { key: 'application_no', label: 'Application No' },
-          { key: 'applicant_name', label: 'Applicant Name' },
-          { key: 'session', label: 'Session' },
-          { key: 'grade', label: 'Class' },
-          { key: 'guardian_phone', label: 'Guardian Phone' },
-          { key: 'status', label: 'Status' },
-          { key: 'created_at', label: 'Created' },
-          { key: 'actions', label: 'Actions' },
-        ] as any[]"
+        :data="items"
+        :columns="columns"
+        :loading="loading"
         :ui="{ td: 'align-top' }"
       >
         <template #empty>
           <div class="py-12 text-center text-sm text-gray-500">
             No applications found.
-          </div>
-        </template>
-
-        <template #cell-session="{ row }">
-          {{ (row as any).session?.name || "-" }}
-        </template>
-        <template #cell-grade="{ row }">
-          {{
-            (row as any).session_grade?.grade?.name ||
-            `#${(row as any).session_grade_id}`
-          }}
-        </template>
-        <template #cell-status="{ row }">
-          <UBadge :color="statusColor((row as any).status)" variant="soft">{{
-            (row as any).status?.toUpperCase()
-          }}</UBadge>
-        </template>
-        <template #cell-created_at="{ row }">
-          {{ formatDate((row as any).created_at) }}
-        </template>
-        <template #cell-actions="{ row }">
-          <div class="flex gap-2">
-            <UButton
-              size="xs"
-              color="primary"
-              icon="i-lucide-eye"
-              @click="goView(row)"
-              >View</UButton
-            >
-            <UButton
-              size="xs"
-              color="secondary"
-              variant="outline"
-              icon="i-lucide-check"
-              @click="goView(row)"
-              >Admit</UButton
-            >
           </div>
         </template>
       </UTable>

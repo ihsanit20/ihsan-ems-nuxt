@@ -23,12 +23,14 @@ const refresh = async () => {
 
 const onLogout = async () => {
   await auth.logout();
-  return navigateTo("/auth/login");
+  await navigateTo("/auth/login");
 };
 </script>
 
 <template>
   <div class="p-4 md:p-8 space-y-6">
+    <!-- Admissions Dashboard Embedded -->
+    <AdmissionsDashboard />
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Dashboard</h1>
       <div class="flex items-center gap-2">

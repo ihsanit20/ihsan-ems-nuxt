@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 
-definePageMeta({
-  layout: "admin",
-  middleware: "auth",
-  roles: ["Owner", "Admin", "Developer"],
-});
-
-useHead({ title: "Admissions Dashboard" });
-
+// Internal fetch logic encapsulated; parent just renders component
 const sessions = useSessionStore();
 const {
   items: sessionItems,
@@ -22,21 +15,18 @@ const { stats, statsLoading, error: appError } = storeToRefs(apps);
 const toast = useToast();
 
 const filter = reactive({
-  academic_session_id: null as number | null,
+  academic_session_id: undefined as number | undefined,
 });
 
 onMounted(async () => {
   try {
     if (!sessionItems.value?.length) await sessions.fetchList();
-    await apps.fetchStats(
-      filter.academic_session_id
-        ? { academic_session_id: filter.academic_session_id }
-        : {}
-    );
+    await loadStats();
   } catch (e: any) {
     toast.add({
-      title: "Load failed",
-      description: e?.data?.message || e?.message || "Could not load dashboard",
+      title: "Admissions load failed",
+      description:
+        e?.data?.message || e?.message || "Could not load admissions dashboard",
       color: "error",
     });
   }
@@ -44,25 +34,31 @@ onMounted(async () => {
 
 watch(
   () => filter.academic_session_id,
-  async (id) => {
-    try {
-      await apps.fetchStats(id ? { academic_session_id: id } : {});
-    } catch (e: any) {
-      toast.add({
-        title: "Failed",
-        description: e?.data?.message || e?.message || "Could not load stats",
-        color: "error",
-      });
-    }
-  }
+  () => loadStats()
 );
 
+async function loadStats() {
+  try {
+    await apps.fetchStats(
+      filter.academic_session_id
+        ? { academic_session_id: filter.academic_session_id }
+        : {}
+    );
+  } catch (e: any) {
+    toast.add({
+      title: "Stats failed",
+      description: e?.data?.message || e?.message || "Could not load stats",
+      color: "error",
+    });
+  }
+}
+
 const statusCount = computed(() => {
-  const by = apps.stats?.by_status || [];
+  const by = stats.value?.by_status || [];
   const map = new Map<string, number>();
   for (const s of by) map.set(s.status, s.count);
   return {
-    total: apps.stats?.total || 0,
+    total: stats.value?.total || 0,
     pending: map.get("pending") || 0,
     accepted: map.get("accepted") || 0,
     rejected: map.get("rejected") || 0,
@@ -77,11 +73,13 @@ const sessionMap = computed(() => {
 });
 
 const bySessionRows = computed(() => {
-  return (apps.stats?.by_session || []).map((row) => ({
+  const data = stats.value?.by_session || [];
+  if (!data.length) return [];
+  return data.map((row) => ({
     session:
       sessionMap.value.get(row.academic_session_id) ||
       `#${row.academic_session_id}`,
-    count: row.count,
+    count: row.count || 0,
   }));
 });
 
@@ -106,10 +104,37 @@ function colorFor(key: string) {
 </script>
 
 <template>
-  <UContainer>
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-semibold">Admissions Dashboard</h1>
-    </div>
+  <div class="space-y-6">
+    <UCard>
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">Admissions Overview</h2>
+        </div>
+      </template>
+      <!-- Filters -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <UFormField label="Academic Session">
+          <USelect
+            v-model="filter.academic_session_id"
+            :items="sessionOptions"
+            placeholder="All sessions"
+            :disabled="sessionLoading || statsLoading"
+            :popper="{ strategy: 'fixed' }"
+            clearable
+          />
+        </UFormField>
+      </div>
+      <template #footer>
+        <div class="text-xs text-gray-500 flex items-center gap-2">
+          <UIcon
+            v-if="statsLoading"
+            name="i-lucide-loader-2"
+            class="h-3 w-3 animate-spin"
+          />
+          <span>Updated admissions statistics</span>
+        </div>
+      </template>
+    </UCard>
 
     <UAlert
       v-if="sessionError || appError"
@@ -118,26 +143,10 @@ function colorFor(key: string) {
       color="error"
       icon="i-lucide-alert-circle"
       variant="soft"
-      class="mb-4"
     />
 
-    <!-- Filters -->
-    <UCard class="mb-6">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <UFormGroup label="Academic Session">
-          <USelect
-            v-model="filter.academic_session_id"
-            :options="sessionOptions"
-            placeholder="All sessions"
-            :disabled="sessionLoading || statsLoading"
-            clearable
-          />
-        </UFormGroup>
-      </div>
-    </UCard>
-
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
       <UCard>
         <div class="text-sm text-gray-500">Total</div>
         <div class="text-2xl font-bold">{{ statusCount.total }}</div>
@@ -180,28 +189,30 @@ function colorFor(key: string) {
       </UCard>
     </div>
 
-    <!-- By Session Summary -->
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Applications by Session</h2>
+          <h3 class="text-base font-semibold">Applications by Session</h3>
           <div
             v-if="statsLoading"
-            class="text-sm text-gray-500 flex items-center gap-1"
+            class="text-xs text-gray-500 flex items-center gap-1"
           >
-            <UIcon name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
+            <UIcon name="i-lucide-loader-2" class="h-3 w-3 animate-spin" />
             Loading
           </div>
         </div>
       </template>
       <UTable
-        :rows="bySessionRows"
-        :columns="[{ key: 'session', label: 'Session' }, { key: 'count', label: 'Count' }] as any[]"
+        :rows="bySessionRows || []"
+        :columns="[
+          { key: 'session', label: 'Session', id: 'session' },
+          { key: 'count', label: 'Count', id: 'count' }
+        ] as any[]"
       >
         <template #empty>
           <div class="text-center py-8 text-gray-500 text-sm">No data</div>
         </template>
       </UTable>
     </UCard>
-  </UContainer>
+  </div>
 </template>

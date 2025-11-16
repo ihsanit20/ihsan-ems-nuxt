@@ -394,7 +394,7 @@ async function submitAdmit() {
             ><h2 class="text-lg font-semibold">Update Status</h2></template
           >
           <div class="space-y-4">
-            <UFormGroup label="Status">
+            <UFormField label="Status">
               <USelect
                 v-model="statusForm.status"
                 :options="[
@@ -404,13 +404,13 @@ async function submitAdmit() {
                   { label: 'Rejected', value: 'rejected' },
                 ]"
               />
-            </UFormGroup>
-            <UFormGroup label="Note">
+            </UFormField>
+            <UFormField label="Note">
               <UTextarea
                 v-model="statusForm.status_note"
                 placeholder="Optional note"
               />
-            </UFormGroup>
+            </UFormField>
             <div class="flex justify-end">
               <UButton
                 :loading="saving"
@@ -456,7 +456,7 @@ async function submitAdmit() {
               color="warning"
               variant="soft"
             />
-            <UFormGroup label="Section">
+            <UFormField label="Section">
               <USelect
                 v-model="admitForm.section_id"
                 :options="sectionOptions"
@@ -464,14 +464,14 @@ async function submitAdmit() {
                 placeholder="Select section"
                 clearable
               />
-            </UFormGroup>
+            </UFormField>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="Roll No">
+              <UFormField label="Roll No">
                 <UInput v-model="admitForm.roll_no" placeholder="Optional" />
-              </UFormGroup>
-              <UFormGroup label="Admission Date">
+              </UFormField>
+              <UFormField label="Admission Date">
                 <UInput v-model="admitForm.admission_date" type="date" />
-              </UFormGroup>
+              </UFormField>
             </div>
           </div>
           <template #footer>

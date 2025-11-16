@@ -23,7 +23,6 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     icon: "i-lucide-badge-plus",
     defaultOpen: true,
     children: [
-      { label: "Dashboard", to: "/admin/admissions/dashboard" },
       { label: "Applications", to: "/admin/admissions/applications" },
       { label: "Offline Entry", to: "/admin/admissions/applications/new" },
     ],
