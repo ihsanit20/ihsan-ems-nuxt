@@ -9,7 +9,7 @@
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"
         ></div>
-        <p class="mt-4 text-gray-600">Loading...</p>
+        <p class="mt-4 text-gray-600">দয়া করে অপেক্ষা করুন…</p>
       </div>
     </div>
 
@@ -22,7 +22,7 @@
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500" />
-            <h3 class="text-lg font-semibold">Error Loading</h3>
+            <h3 class="text-lg font-semibold">ডেটা লোড করা যাচ্ছে না</h3>
           </div>
         </template>
         <p class="text-gray-600">{{ error }}</p>
@@ -43,23 +43,22 @@
                 <h1
                   class="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight"
                 >
-                  Welcome to {{ meta?.name }}
+                  {{ meta?.name }} এ স্বাগতম
                 </h1>
                 <p class="text-xl text-gray-600">
-                  Comprehensive Education Management System
+                  একটি সমন্বিত শিক্ষা ব্যবস্থাপনা প্ল্যাটফর্ম
                 </p>
               </div>
               <p class="text-lg text-gray-600 leading-relaxed">
-                Streamline your educational institution with our powerful and
-                intuitive management platform. Manage admissions, attendance,
-                fees, and more in one place.
+                আমাদের সহজ‑ব্যবহারযোগ্য প্ল্যাটফর্মে ভর্তি, উপস্থিতি, ফি—সবকিছুই
+                এক জায়গায়, ঝামেলামুক্তভাবে পরিচালনা করুন।
               </p>
               <div class="flex flex-col sm:flex-row gap-4 pt-4">
                 <UButton size="lg" color="primary" icon="i-lucide-arrow-right">
-                  Get Started
+                  শুরু করুন
                 </UButton>
                 <UButton size="lg" variant="outline" icon="i-lucide-play">
-                  Watch Demo
+                  ডেমো দেখুন
                 </UButton>
               </div>
             </div>
@@ -87,10 +86,10 @@
       <section class="mx-auto max-w-7xl px-4 py-12">
         <div class="text-center mb-12">
           <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Powerful Features
+            আমাদের সুবিধাগুলো
           </h2>
           <p class="text-lg text-gray-600">
-            Everything you need to manage your institution efficiently
+            আপনার প্রতিষ্ঠান পরিচালনায় যা যা দরকার—সব একসাথে।
           </p>
         </div>
 
@@ -111,11 +110,11 @@
               </div>
             </template>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              Admission Management
+              ভর্তি ব্যবস্থাপনা
             </h3>
             <p class="text-gray-600">
-              Streamline the admission process with automated workflows and
-              online applications.
+              অনলাইন আবেদন ও স্বয়ংক্রিয় ধাপের মাধ্যমে ভর্তি প্রক্রিয়া সহজ ও
+              দ্রুত করুন।
             </p>
           </UCard>
 
@@ -135,11 +134,10 @@
               </div>
             </template>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              Attendance Tracking
+              উপস্থিতি ট্র্যাকিং
             </h3>
             <p class="text-gray-600">
-              Real-time attendance monitoring with automated reports and
-              notifications.
+              রিয়েল–টাইম উপস্থিতি, স্বয়ংক্রিয় রিপোর্ট আর নোটিফিকেশন—সব একসাথে।
             </p>
           </UCard>
 
@@ -159,13 +157,168 @@
               </div>
             </template>
             <h3 class="text-xl font-semibold text-gray-900 mb-2">
-              Fee Management
+              ফি ব্যবস্থাপনা
             </h3>
             <p class="text-gray-600">
-              Manage fees, payments, and financial records with complete
-              transparency.
+              ফি ও পেমেন্ট ট্র্যাকিং, রিপোর্ট—সবকিছু স্বচ্ছভাবে।
             </p>
           </UCard>
+        </div>
+      </section>
+
+      <!-- Admission Section -->
+      <section class="mx-auto max-w-7xl px-4 py-12">
+        <div
+          class="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-blue-600 rounded-3xl shadow-2xl"
+        >
+          <!-- Background Pattern -->
+          <div
+            class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYtMi42ODYgNi02cy0yLjY4Ni02LTYtNi02IDIuNjg2LTYgNiAyLjY4NiA2IDYgNm0wIDEyYzMuMzE0IDAgNi0yLjY4NiA2LTZzLTIuNjg2LTYtNi02LTYgMi42ODYtNiA2IDIuNjg2IDYgNiA2bTAgMTJjMy4zMTQgMCA2LTIuNjg2IDYtNnMtMi42ODYtNi02LTYtNiAyLjY4Ni02IDYgMi42ODYgNiA2IDZ6IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iLjUiIG9wYWNpdHk9Ii4xIi8+PC9nPjwvc3ZnPg==')] opacity-10"
+          ></div>
+
+          <div class="relative px-6 py-16 sm:px-12 sm:py-20">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <!-- Left Content -->
+              <div class="text-white space-y-6">
+                <div
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm"
+                >
+                  <UIcon name="i-lucide-sparkles" class="w-4 h-4" />
+                  <span class="text-sm font-medium">অনলাইনে আবেদন চলছে</span>
+                </div>
+
+                <h2
+                  class="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight"
+                >
+                  আজই ভর্তির আবেদন করুন<br />
+                  <span class="text-white/90">শুরু হোক নতুন পথচলা</span>
+                </h2>
+
+                <p class="text-lg text-white/90 leading-relaxed">
+                  কয়েক মিনিটেই অনলাইনে আবেদন করা যাবে। প্রক্রিয়াটা সহজ, দ্রুত আর
+                  ঝামেলামুক্ত।
+                </p>
+
+                <!-- Features List -->
+                <ul class="space-y-3 text-white/90">
+                  <li class="flex items-start gap-3">
+                    <UIcon
+                      name="i-lucide-check-circle"
+                      class="w-5 h-5 shrink-0 mt-0.5"
+                    />
+                    <span>দ্রুত, সহজ অনলাইন আবেদন</span>
+                  </li>
+                  <li class="flex items-start gap-3">
+                    <UIcon
+                      name="i-lucide-check-circle"
+                      class="w-5 h-5 shrink-0 mt-0.5"
+                    />
+                    <span>আবেদনের অবস্থা তাৎক্ষণিকভাবে দেখুন</span>
+                  </li>
+                  <li class="flex items-start gap-3">
+                    <UIcon
+                      name="i-lucide-check-circle"
+                      class="w-5 h-5 shrink-0 mt-0.5"
+                    />
+                    <span>নিরাপদে ডকুমেন্ট জমা</span>
+                  </li>
+                </ul>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                  <UButton
+                    to="/public/admission"
+                    size="xl"
+                    color="white"
+                    icon="i-lucide-graduation-cap"
+                    class="shadow-lg hover:shadow-xl transition-shadow"
+                  >
+                    ভর্তির জন্য আবেদন করুন
+                  </UButton>
+
+                  <UButton
+                    to="/public/admission/status"
+                    size="xl"
+                    color="white"
+                    variant="outline"
+                    icon="i-lucide-search"
+                    class="border-white/30 hover:bg-white/10"
+                  >
+                    স্ট্যাটাস দেখুন
+                  </UButton>
+                </div>
+              </div>
+
+              <!-- Right Content - Stats/Info Cards -->
+              <div class="hidden lg:block space-y-4">
+                <div
+                  class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20"
+                    >
+                      <UIcon name="i-lucide-users" class="w-6 h-6 text-white" />
+                    </div>
+                    <div class="text-white">
+                      <p class="text-2xl font-bold">১০০০+</p>
+                      <p class="text-sm text-white/80">ভর্তিকৃত শিক্ষার্থী</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20"
+                    >
+                      <UIcon name="i-lucide-award" class="w-6 h-6 text-white" />
+                    </div>
+                    <div class="text-white">
+                      <p class="text-2xl font-bold">৯৫%</p>
+                      <p class="text-sm text-white/80">সন্তুষ্টির হার</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20"
+                    >
+                      <UIcon name="i-lucide-clock" class="w-6 h-6 text-white" />
+                    </div>
+                    <div class="text-white">
+                      <p class="text-2xl font-bold">২৪/৭</p>
+                      <p class="text-sm text-white/80">আবেদন সহায়তা</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mobile Stats -->
+            <div
+              class="lg:hidden grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/20"
+            >
+              <div class="text-center text-white">
+                <p class="text-2xl font-bold">১০০০+</p>
+                <p class="text-xs text-white/80 mt-1">শিক্ষার্থী</p>
+              </div>
+              <div class="text-center text-white">
+                <p class="text-2xl font-bold">৯৫%</p>
+                <p class="text-xs text-white/80 mt-1">সন্তুষ্টি</p>
+              </div>
+              <div class="text-center text-white">
+                <p class="text-2xl font-bold">২৪/৭</p>
+                <p class="text-xs text-white/80 mt-1">সহায়তা</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -178,23 +331,23 @@
             <div class="text-3xl sm:text-4xl font-bold text-primary-600">
               {{ meta?.name?.length || 0 }}
             </div>
-            <p class="text-gray-600 mt-2">Institution Name</p>
+            <p class="text-gray-600 mt-2">প্রতিষ্ঠানের নাম</p>
           </div>
           <div class="text-center">
             <div class="text-3xl sm:text-4xl font-bold text-blue-600">
               {{ meta?.locale?.default || "EN" }}
             </div>
-            <p class="text-gray-600 mt-2">Language</p>
+            <p class="text-gray-600 mt-2">ভাষা</p>
           </div>
           <div class="text-center">
             <div class="text-3xl sm:text-4xl font-bold text-green-600">
               {{ meta?.currency?.code || "USD" }}
             </div>
-            <p class="text-gray-600 mt-2">Currency</p>
+            <p class="text-gray-600 mt-2">মুদ্রা</p>
           </div>
           <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold text-purple-600">3+</div>
-            <p class="text-gray-600 mt-2">Active Modules</p>
+            <div class="text-3xl sm:text-4xl font-bold text-purple-600">৩+</div>
+            <p class="text-gray-600 mt-2">সক্রিয় মডিউল</p>
           </div>
         </div>
       </section>
@@ -203,15 +356,13 @@
       <section class="mx-auto max-w-7xl px-4 py-12">
         <UCard>
           <template #header>
-            <h3 class="text-2xl font-bold text-gray-900">
-              Institution Details
-            </h3>
+            <h3 class="text-2xl font-bold text-gray-900">প্রতিষ্ঠানের বিবরণ</h3>
           </template>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="space-y-4">
               <div>
                 <p class="text-sm font-medium text-gray-500 uppercase">
-                  Institution Name
+                  প্রতিষ্ঠানের নাম
                 </p>
                 <p class="text-lg text-gray-900 font-semibold">
                   {{ meta?.name }}
@@ -219,7 +370,7 @@
               </div>
               <div>
                 <p class="text-sm font-medium text-gray-500 uppercase">
-                  Domain
+                  ডোমেইন
                 </p>
                 <p class="text-lg text-gray-900 font-semibold">
                   {{ meta?.domain }}
@@ -229,7 +380,7 @@
             <div class="space-y-4">
               <div>
                 <p class="text-sm font-medium text-gray-500 uppercase">
-                  Default Language
+                  ডিফল্ট ভাষা
                 </p>
                 <p class="text-lg text-gray-900 font-semibold">
                   {{ meta?.locale?.default }}
@@ -237,7 +388,7 @@
               </div>
               <div>
                 <p class="text-sm font-medium text-gray-500 uppercase">
-                  Currency
+                  মুদ্রা
                 </p>
                 <p class="text-lg text-gray-900 font-semibold">
                   {{ meta?.currency?.code }}
@@ -254,11 +405,11 @@
       >
         <div class="text-center space-y-6">
           <h2 class="text-3xl sm:text-4xl font-bold">
-            Ready to Transform Your Institution?
+            প্রতিষ্ঠান পরিচালনা আরও সহজ করতে প্রস্তুত?
           </h2>
           <p class="text-lg text-white/90 max-w-2xl mx-auto">
-            Join hundreds of educational institutions using our platform to
-            streamline operations and improve student outcomes.
+            সারা দেশের শত শত প্রতিষ্ঠান আমাদের প্ল্যাটফর্মে কাজ করছে—আপনিও
+            কাজগুলো গুছিয়ে নিন, ফলও মিলবে দ্রুত।
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <UButton
@@ -267,7 +418,7 @@
               variant="soft"
               icon="i-lucide-arrow-right"
             >
-              Start Free Trial
+              বিনামূল্যে ট্রায়াল শুরু করুন
             </UButton>
             <UButton
               size="lg"
@@ -275,7 +426,7 @@
               variant="outline"
               icon="i-lucide-phone"
             >
-              Contact Sales
+              সেলস টিমের সাথে কথা বলুন
             </UButton>
           </div>
         </div>
