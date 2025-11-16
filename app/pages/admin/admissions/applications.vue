@@ -25,7 +25,12 @@ const router = useRouter();
 const filters = reactive({
   academic_session_id: undefined as number | undefined,
   session_grade_id: undefined as number | undefined,
-  status: undefined as undefined | "pending" | "accepted" | "rejected" | "admitted",
+  status: undefined as
+    | undefined
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "admitted",
   search: "",
 });
 
