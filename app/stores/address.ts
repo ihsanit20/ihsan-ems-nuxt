@@ -71,7 +71,7 @@ export const useAddressStore = defineStore("address", {
       this.loadingDivisions = true;
       try {
         const { $api } = useNuxtApp();
-        this.divisions = await $api<Division[]>("/api/v1/divisions");
+        this.divisions = await $api<Division[]>("/v1/divisions");
       } catch (error) {
         console.error("Failed to fetch divisions:", error);
         this.divisions = [];
@@ -95,7 +95,7 @@ export const useAddressStore = defineStore("address", {
       try {
         const { $api } = useNuxtApp();
         this.districts = await $api<District[]>(
-          `/api/v1/districts?division_id=${divisionId}`
+          `/v1/districts?division_id=${divisionId}`
         );
       } catch (error) {
         console.error("Failed to fetch districts:", error);
@@ -119,9 +119,7 @@ export const useAddressStore = defineStore("address", {
       this.loadingAreas = true;
       try {
         const { $api } = useNuxtApp();
-        this.areas = await $api<Area[]>(
-          `/api/v1/areas?district_id=${districtId}`
-        );
+        this.areas = await $api<Area[]>(`/v1/areas?district_id=${districtId}`);
       } catch (error) {
         console.error("Failed to fetch areas:", error);
         this.areas = [];
