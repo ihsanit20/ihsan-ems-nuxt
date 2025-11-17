@@ -4,12 +4,10 @@ import { defineStore } from "pinia";
 /* ---------- Types ---------- */
 
 export type AddressJson = {
-  house?: string;
-  road?: string;
-  village?: string;
-  post_office?: string;
-  upazila?: string;
-  district?: string;
+  division_id: number | undefined;
+  district_id: number | undefined;
+  area_id?: number | undefined;
+  village_house_holding?: string | undefined;
 };
 
 export type AdmissionApplicationStatus =

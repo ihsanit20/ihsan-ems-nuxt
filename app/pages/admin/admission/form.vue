@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import type { AddressData } from "~/stores/address";
 
 definePageMeta({
   layout: "admin",
@@ -18,6 +19,17 @@ const { items: sessionItems, loading: loadingSessions } = storeToRefs(sessions);
 const apps = useAdmissionApplicationStore();
 const { saving, meta } = storeToRefs(apps);
 
+// Address stores - we'll use filters for separate present/permanent tracking
+const addressStore = useAddressStore();
+const { divisionItems, loadingDivisions, loadingDistricts, loadingAreas } =
+  storeToRefs(addressStore);
+
+// Separate district/area lists for present and permanent
+const presentDistricts = ref<any[]>([]);
+const presentAreas = ref<any[]>([]);
+const permanentDistricts = ref<any[]>([]);
+const permanentAreas = ref<any[]>([]);
+
 const form = reactive({
   session_grade_id: null as number | null,
   applicant_name: "",
@@ -35,31 +47,112 @@ const form = reactive({
   guardian_phone: "",
   guardian_relation: "",
   present_address: {
-    house: "",
-    road: "",
-    village: "",
-    post_office: "",
-    upazila: "",
-    district: "",
-  },
+    division_id: undefined,
+    district_id: undefined,
+    area_id: undefined,
+    village_house_holding: "",
+  } as AddressData,
   permanent_address: {
-    house: "",
-    road: "",
-    village: "",
-    post_office: "",
-    upazila: "",
-    district: "",
-  },
-  residential_type: "day" as "day" | "residential",
+    division_id: undefined,
+    district_id: undefined,
+    area_id: undefined,
+    village_house_holding: "",
+  } as AddressData,
+  is_present_same_as_permanent: false,
+  residential_type: "non_residential" as
+    | "residential"
+    | "new_musafir"
+    | "non_residential",
   previous_institution_name: "",
   previous_class: "",
   previous_result: "",
 });
 
+// Watch for cascading dropdown changes - Present Address
+watch(
+  () => form.present_address.division_id,
+  async (newVal) => {
+    form.present_address.district_id = undefined;
+    form.present_address.area_id = undefined;
+    if (newVal) {
+      await addressStore.fetchDistricts(newVal);
+      presentDistricts.value = addressStore
+        .getDistrictsByDivision(newVal)
+        .map((d) => ({ label: d.name, value: d.id }));
+    } else {
+      presentDistricts.value = [];
+    }
+    presentAreas.value = [];
+  }
+);
+
+watch(
+  () => form.present_address.district_id,
+  async (newVal) => {
+    form.present_address.area_id = undefined;
+    if (newVal) {
+      await addressStore.fetchAreas(newVal);
+      presentAreas.value = addressStore
+        .getAreasByDistrict(newVal)
+        .map((a) => ({ label: a.name, value: a.id }));
+    } else {
+      presentAreas.value = [];
+    }
+  }
+);
+
+// Watch for cascading dropdown changes - Permanent Address
+watch(
+  () => form.permanent_address.division_id,
+  async (newVal) => {
+    form.permanent_address.district_id = undefined;
+    form.permanent_address.area_id = undefined;
+    if (newVal) {
+      await addressStore.fetchDistricts(newVal);
+      permanentDistricts.value = addressStore
+        .getDistrictsByDivision(newVal)
+        .map((d) => ({ label: d.name, value: d.id }));
+    } else {
+      permanentDistricts.value = [];
+    }
+    permanentAreas.value = [];
+  }
+);
+
+watch(
+  () => form.permanent_address.district_id,
+  async (newVal) => {
+    form.permanent_address.area_id = undefined;
+    if (newVal) {
+      await addressStore.fetchAreas(newVal);
+      permanentAreas.value = addressStore
+        .getAreasByDistrict(newVal)
+        .map((a) => ({ label: a.name, value: a.id }));
+    } else {
+      permanentAreas.value = [];
+    }
+  }
+);
+
+// Watch for "same as present" checkbox
+watch(
+  () => form.is_present_same_as_permanent,
+  async (isSame) => {
+    if (isSame) {
+      form.permanent_address = { ...form.present_address };
+      permanentDistricts.value = [...presentDistricts.value];
+      permanentAreas.value = [...presentAreas.value];
+    }
+  }
+);
+
 onMounted(async () => {
   if (!sessionItems.value.length) await sessions.fetchList();
   if (!meta.value || !(meta.value as any).session_grades?.length)
     await apps.fetchMeta();
+
+  // Load divisions
+  await addressStore.fetchDivisions();
 });
 
 const sessionOptions = computed(() => {
@@ -209,51 +302,104 @@ async function submit() {
 
         <UDivider label="Addresses" />
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Present Address -->
           <div class="space-y-4">
             <h3 class="font-medium">Present Address</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="House"
-                ><UInput v-model="form.present_address.house"
-              /></UFormField>
-              <UFormField label="Road"
-                ><UInput v-model="form.present_address.road"
-              /></UFormField>
-              <UFormField label="Village"
-                ><UInput v-model="form.present_address.village"
-              /></UFormField>
-              <UFormField label="Post Office"
-                ><UInput v-model="form.present_address.post_office"
-              /></UFormField>
-              <UFormField label="Upazila"
-                ><UInput v-model="form.present_address.upazila"
-              /></UFormField>
-              <UFormField label="District"
-                ><UInput v-model="form.present_address.district"
-              /></UFormField>
-            </div>
+            <UFormField label="Division" required>
+              <USelect
+                v-model="form.present_address.division_id"
+                :items="divisionItems"
+                :loading="loadingDivisions"
+                placeholder="Select division"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="District" required>
+              <USelect
+                v-model="form.present_address.district_id"
+                :items="presentDistricts"
+                :loading="loadingDistricts"
+                :disabled="!form.present_address.division_id"
+                placeholder="Select district"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="Area/Upazila">
+              <USelect
+                v-model="form.present_address.area_id"
+                :items="presentAreas"
+                :loading="loadingAreas"
+                :disabled="!form.present_address.district_id"
+                placeholder="Select area"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="Village/House/Holding">
+              <UTextarea
+                v-model="form.present_address.village_house_holding"
+                placeholder="Village, House no, Holding no, etc."
+                :rows="3"
+                :maxlength="500"
+              />
+            </UFormField>
           </div>
+
+          <!-- Permanent Address -->
           <div class="space-y-4">
-            <h3 class="font-medium">Permanent Address</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="House"
-                ><UInput v-model="form.permanent_address.house"
-              /></UFormField>
-              <UFormField label="Road"
-                ><UInput v-model="form.permanent_address.road"
-              /></UFormField>
-              <UFormField label="Village"
-                ><UInput v-model="form.permanent_address.village"
-              /></UFormField>
-              <UFormField label="Post Office"
-                ><UInput v-model="form.permanent_address.post_office"
-              /></UFormField>
-              <UFormField label="Upazila"
-                ><UInput v-model="form.permanent_address.upazila"
-              /></UFormField>
-              <UFormField label="District"
-                ><UInput v-model="form.permanent_address.district"
-              /></UFormField>
+            <div class="flex items-center justify-between">
+              <h3 class="font-medium">Permanent Address</h3>
+              <UFormField>
+                <div class="flex items-center gap-2">
+                  <USwitch v-model="form.is_present_same_as_permanent" />
+                  <span class="text-sm text-gray-600">Same as present</span>
+                </div>
+              </UFormField>
             </div>
+            <UFormField label="Division" required>
+              <USelect
+                v-model="form.permanent_address.division_id"
+                :items="divisionItems"
+                :loading="loadingDivisions"
+                :disabled="form.is_present_same_as_permanent"
+                placeholder="Select division"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="District" required>
+              <USelect
+                v-model="form.permanent_address.district_id"
+                :items="permanentDistricts"
+                :loading="loadingDistricts"
+                :disabled="
+                  !form.permanent_address.division_id ||
+                  form.is_present_same_as_permanent
+                "
+                placeholder="Select district"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="Area/Upazila">
+              <USelect
+                v-model="form.permanent_address.area_id"
+                :items="permanentAreas"
+                :loading="loadingAreas"
+                :disabled="
+                  !form.permanent_address.district_id ||
+                  form.is_present_same_as_permanent
+                "
+                placeholder="Select area"
+                :popper="{ strategy: 'fixed' }"
+              />
+            </UFormField>
+            <UFormField label="Village/House/Holding">
+              <UTextarea
+                v-model="form.permanent_address.village_house_holding"
+                placeholder="Village, House no, Holding no, etc."
+                :rows="3"
+                :maxlength="500"
+                :disabled="form.is_present_same_as_permanent"
+              />
+            </UFormField>
           </div>
         </div>
 
