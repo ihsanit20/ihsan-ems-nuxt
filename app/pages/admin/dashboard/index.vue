@@ -30,7 +30,7 @@ const onLogout = async () => {
 <template>
   <div class="p-4 md:p-8 space-y-6">
     <!-- Admissions Dashboard Embedded -->
-    <AdmissionsDashboard />
+    <AdmissionDashboard />
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold">Dashboard</h1>
       <div class="flex items-center gap-2">

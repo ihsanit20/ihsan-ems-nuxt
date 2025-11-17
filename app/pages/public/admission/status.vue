@@ -143,7 +143,7 @@ function resetSearch() {
       <!-- Search Form -->
       <UCard class="mb-6">
         <UForm :state="state" @submit="onSubmit" class="space-y-4">
-          <UFormGroup
+          <UFormField
             label="Application Number"
             required
             name="application_no"
@@ -155,9 +155,9 @@ function resetSearch() {
               :disabled="loading"
               size="lg"
             />
-          </UFormGroup>
+          </UFormField>
 
-          <UFormGroup
+          <UFormField
             label="Date of Birth"
             required
             name="date_of_birth"
@@ -169,7 +169,7 @@ function resetSearch() {
               :disabled="loading"
               size="lg"
             />
-          </UFormGroup>
+          </UFormField>
 
           <div class="flex gap-4">
             <UButton

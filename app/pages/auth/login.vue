@@ -39,23 +39,23 @@ const onSubmit = async () => {
       </template>
 
       <UForm @submit.prevent="onSubmit" class="grid gap-4">
-        <UFormGroup label="Email or Phone" name="identifier">
+        <UFormField label="Email or Phone" name="identifier">
           <UInput
             v-model="identifier"
             placeholder="you@example.com or 017..."
             autofocus
             class="w-full"
           />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup label="Password" name="password">
+        <UFormField label="Password" name="password">
           <UInput
             v-model="password"
             type="password"
             placeholder="••••••••"
             class="w-full"
           />
-        </UFormGroup>
+        </UFormField>
 
         <div v-if="auth.status === 'error'" class="text-red-600 text-sm">
           {{ auth.error }}

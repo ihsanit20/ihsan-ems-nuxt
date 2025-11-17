@@ -4,7 +4,7 @@ definePageMeta({
 });
 
 useHead({
-  title: "Admission - Apply Online",
+  title: "ভর্তি - অনলাইনে আবেদন",
 });
 
 const store = useAdmissionApplicationStore();
@@ -32,10 +32,10 @@ const sessionGrades = computed(() => {
     <div class="mx-auto max-w-4xl">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold mb-2">Online Admission</h1>
+        <h1 class="text-3xl font-bold mb-2">অনলাইন ভর্তি</h1>
         <p class="text-gray-600">
-          Welcome to our online admission portal. Please review the guidelines
-          and apply for admission to your preferred class.
+          আমাদের অনলাইন ভর্তি পোর্টালে স্বাগতম। দয়া করে নির্দেশনাগুলো পড়ে আপনার
+          পছন্দের শ্রেণিতে ভর্তির জন্য আবেদন করুন।
         </p>
       </div>
 
@@ -44,30 +44,30 @@ const sessionGrades = computed(() => {
         <template #header>
           <h2 class="text-xl font-semibold flex items-center gap-2">
             <UIcon name="i-lucide-info" class="h-5 w-5" />
-            Admission Guidelines
+            ভর্তির নির্দেশনা
           </h2>
         </template>
 
         <div class="space-y-3 text-sm text-gray-700">
           <p>
-            <strong>1. Eligibility:</strong> Ensure your child meets the age
-            and academic requirements for the desired class.
+            <strong>১) যোগ্যতা:</strong> যে শ্রেণিতে ভর্তি করতে চান, তার বয়স ও
+            শিক্ষাগত শর্ত পূরণ হচ্ছে কিনা নিশ্চিত করুন।
           </p>
           <p>
-            <strong>2. Documents:</strong> Keep necessary documents ready
-            (birth certificate, previous result, etc.).
+            <strong>২) নথিপত্র:</strong> প্রয়োজনীয় কাগজপত্র প্রস্তুত রাখুন
+            (জন্মসনদ, পূর্বের ফলাফল ইত্যাদি)।
           </p>
           <p>
-            <strong>3. Application:</strong> Fill the online form carefully.
-            All fields marked with * are mandatory.
+            <strong>৩) আবেদন:</strong> অনলাইন ফর্মটি মনোযোগ দিয়ে পূরণ করুন।
+            তারকা (*) চিহ্নিত ঘরগুলো বাধ্যতামূলক।
           </p>
           <p>
-            <strong>4. Review:</strong> Your application will be reviewed by
-            our admission committee. You will be notified about the status.
+            <strong>৪) পর্যালোচনা:</strong> আপনার আবেদনটি ভর্তি কমিটি পর্যালোচনা
+            করবে। ফলাফল সম্পর্কে আপনাকে জানানো হবে।
           </p>
           <p>
-            <strong>5. Status Check:</strong> You can check your application
-            status anytime using your application number and date of birth.
+            <strong>৫) স্ট্যাটাস দেখুন:</strong> আবেদন নম্বর ও জন্মতারিখ ব্যবহার
+            করে যেকোনো সময় স্ট্যাটাস দেখতে পারবেন।
           </p>
         </div>
       </UCard>
@@ -77,7 +77,7 @@ const sessionGrades = computed(() => {
         <template #header>
           <h2 class="text-xl font-semibold flex items-center gap-2">
             <UIcon name="i-lucide-calendar" class="h-5 w-5" />
-            Available Sessions & Classes
+            উপলব্ধ সেশন ও শ্রেণি
           </h2>
         </template>
 
@@ -89,8 +89,8 @@ const sessionGrades = computed(() => {
           >
             <h3 class="font-semibold text-lg mb-2">{{ session.name }}</h3>
             <p class="text-sm text-gray-600 mb-3">
-              Duration: {{ new Date(session.start_date).toLocaleDateString() }}
-              - {{ new Date(session.end_date).toLocaleDateString() }}
+              সময়কাল: {{ new Date(session.start_date).toLocaleDateString() }} -
+              {{ new Date(session.end_date).toLocaleDateString() }}
             </p>
 
             <div class="flex flex-wrap gap-2">
@@ -102,9 +102,9 @@ const sessionGrades = computed(() => {
                 color="primary"
                 variant="soft"
               >
-                {{ sg.grade?.name || `Grade ${sg.grade_id}` }}
+                {{ sg.grade?.name || `শ্রেণি ${sg.grade_id}` }}
                 <span v-if="sg.capacity" class="ml-1">
-                  ({{ sg.capacity }} seats)
+                  ({{ sg.capacity }} টি আসন)
                 </span>
               </UBadge>
             </div>
@@ -113,15 +113,18 @@ const sessionGrades = computed(() => {
 
         <div v-else class="text-center py-8 text-gray-500">
           <UIcon name="i-lucide-alert-circle" class="h-8 w-8 mx-auto mb-2" />
-          <p>No active admission sessions available at the moment.</p>
+          <p>এই মুহূর্তে কোনো সক্রিয় ভর্তি সেশন নেই।</p>
         </div>
       </UCard>
 
       <!-- Loading State -->
       <UCard v-else class="mb-6">
         <div class="text-center py-8">
-          <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin mx-auto" />
-          <p class="text-gray-500 mt-2">Loading admission information...</p>
+          <UIcon
+            name="i-lucide-loader-2"
+            class="h-8 w-8 animate-spin mx-auto"
+          />
+          <p class="text-gray-500 mt-2">ভর্তির তথ্য লোড হচ্ছে...</p>
         </div>
       </UCard>
 
@@ -134,7 +137,7 @@ const sessionGrades = computed(() => {
           icon="i-lucide-edit"
           :disabled="metaLoading || activeSessions.length === 0"
         >
-          Apply Online
+          অনলাইনে আবেদন
         </UButton>
 
         <UButton
@@ -144,13 +147,13 @@ const sessionGrades = computed(() => {
           size="lg"
           icon="i-lucide-search"
         >
-          Check Status
+          স্ট্যাটাস দেখুন
         </UButton>
       </div>
 
       <!-- Help Text -->
       <p class="text-center text-sm text-gray-500 mt-6">
-        Need help? Contact our admission office during working hours.
+        সহায়তা লাগলে অফিস সময়ে ভর্তি অফিসে যোগাযোগ করুন।
       </p>
     </div>
   </UContainer>

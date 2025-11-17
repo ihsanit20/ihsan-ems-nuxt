@@ -149,7 +149,7 @@ function goView(row: any) {
     <!-- Filters -->
     <UCard class="mb-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <UFormGroup label="Session">
+        <UFormField label="Session">
           <USelect
             v-model="filters.sessionId"
             :options="sessionOptions"
@@ -157,14 +157,14 @@ function goView(row: any) {
             :disabled="myLoading"
             clearable
           />
-        </UFormGroup>
-        <UFormGroup label="Status">
+        </UFormField>
+        <UFormField label="Status">
           <USelect
             v-model="filters.status"
             :options="statusOptions"
             :disabled="myLoading"
           />
-        </UFormGroup>
+        </UFormField>
         <div class="flex items-end">
           <UButton
             color="secondary"

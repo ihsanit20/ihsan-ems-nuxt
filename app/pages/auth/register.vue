@@ -59,23 +59,23 @@ const onSubmit = async () => {
       </template>
 
       <UForm @submit.prevent="onSubmit" class="grid gap-4">
-        <UFormGroup label="Full name" name="name">
+        <UFormField label="Full name" name="name">
           <UInput v-model="name" placeholder="John Doe" class="w-full" />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup label="Phone (required)" name="phone">
+        <UFormField label="Phone (required)" name="phone">
           <UInput v-model="phone" placeholder="017XXXXXXXX" class="w-full" />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup label="Email (optional)" name="email">
+        <UFormField label="Email (optional)" name="email">
           <UInput
             v-model="email"
             placeholder="you@example.com"
             class="w-full"
           />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup
+        <UFormField
           label="Password"
           name="password"
           hint="Minimum 4 characters"
@@ -86,7 +86,7 @@ const onSubmit = async () => {
             placeholder="••••"
             class="w-full"
           />
-        </UFormGroup>
+        </UFormField>
 
         <div v-if="error" class="text-red-600 text-sm">
           {{ error }}
