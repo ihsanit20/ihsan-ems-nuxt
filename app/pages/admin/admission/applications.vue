@@ -268,61 +268,111 @@ const columns: TableColumn<Row>[] = [
       class="mb-4"
     />
 
-    <!-- Filters -->
-    <UCard class="mb-4">
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <UFormField label="Session">
-          <USelect
-            v-model="filters.academic_session_id"
-            :items="sessionOptions"
-            placeholder="All"
-            :disabled="loading || sessionLoading"
-            :popper="{ strategy: 'fixed' }"
-            clearable
-          />
-        </UFormField>
-        <UFormField label="Class">
-          <USelect
-            v-model="filters.session_grade_id"
-            :items="classOptions"
-            placeholder="All"
-            :disabled="loading || !meta?.session_grades?.length"
-            :popper="{ strategy: 'fixed' }"
-            clearable
-          />
-        </UFormField>
-        <UFormField label="Status">
-          <USelect
-            v-model="filters.status"
-            :items="statusItems"
-            :disabled="loading"
-          />
-        </UFormField>
-        <UFormField label="Search">
-          <UInput
-            v-model="filters.search"
-            placeholder="Name / Phone / Application No"
-            :disabled="loading"
-          />
-        </UFormField>
-        <div class="flex items-end">
-          <UButton
-            color="secondary"
-            variant="outline"
-            :disabled="loading"
-            @click="
-              filters.academic_session_id = undefined;
-              filters.session_grade_id = undefined;
-              filters.status = undefined;
-              filters.search = '';
-              apps.resetFilters();
-              loadList();
+    <!-- Filters Bar -->
+    <div class="flex items-center gap-3 mb-4">
+      <UInput
+        v-model="filters.search"
+        placeholder="Search by name, phone, or application no..."
+        icon="i-lucide-search"
+        :disabled="loading"
+        class="flex-1"
+      />
+
+      <UPopover>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-filter"
+          trailing-icon="i-lucide-chevron-down"
+        >
+          Filters
+          <UBadge
+            v-if="
+              filters.academic_session_id ||
+              filters.session_grade_id ||
+              filters.status
             "
-            >Reset</UButton
+            color="primary"
+            variant="solid"
+            size="xs"
+            class="ml-2"
           >
-        </div>
-      </div>
-    </UCard>
+            {{
+              [
+                filters.academic_session_id,
+                filters.session_grade_id,
+                filters.status,
+              ].filter(Boolean).length
+            }}
+          </UBadge>
+        </UButton>
+
+        <template #content>
+          <div class="p-4 w-80 space-y-4">
+            <div class="space-y-3">
+              <UFormField label="Session">
+                <USelect
+                  v-model="filters.academic_session_id"
+                  :items="sessionOptions"
+                  placeholder="All Sessions"
+                  :disabled="loading || sessionLoading"
+                  clearable
+                />
+              </UFormField>
+
+              <UFormField label="Class / Grade">
+                <USelect
+                  v-model="filters.session_grade_id"
+                  :items="classOptions"
+                  placeholder="All Classes"
+                  :disabled="loading || !meta?.session_grades?.length"
+                  clearable
+                />
+              </UFormField>
+
+              <UFormField label="Status">
+                <USelect
+                  v-model="filters.status"
+                  :items="statusItems"
+                  placeholder="All Statuses"
+                  :disabled="loading"
+                />
+              </UFormField>
+            </div>
+
+            <USeparator />
+
+            <div class="flex justify-between">
+              <UButton
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                :disabled="loading"
+                @click="
+                  filters.academic_session_id = undefined;
+                  filters.session_grade_id = undefined;
+                  filters.status = undefined;
+                  apps.resetFilters();
+                  loadList();
+                "
+              >
+                Clear Filters
+              </UButton>
+            </div>
+          </div>
+        </template>
+      </UPopover>
+
+      <UButton
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-refresh-cw"
+        :loading="loading"
+        @click="loadList"
+      >
+        Refresh
+      </UButton>
+    </div>
 
     <!-- Table -->
     <UCard>

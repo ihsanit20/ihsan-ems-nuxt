@@ -21,22 +21,10 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
   {
     label: "Admissions",
     icon: "i-lucide-badge-plus",
-    defaultOpen: true,
-    children: [
-      { label: "Applications", to: "/admin/admissions/applications" },
-      { label: "Offline Entry", to: "/admin/admissions/applications/new" },
-    ],
+    to: "/admin/admissions/applications",
+    exact: true,
   },
 
-  // {
-  //   label: "Admission",
-  //   icon: "i-lucide-badge-plus",
-  //   children: [
-  //     { label: "New Admission", to: "/admin/admission" },
-  //     { label: "Students", to: "/admin/students" },
-  //     { label: "Imports", to: "/admin/students/imports" },
-  //   ],
-  // },
   // {
   //   label: "Attendance",
   //   icon: "i-lucide-check-square",
