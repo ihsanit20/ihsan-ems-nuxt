@@ -94,7 +94,7 @@ async function submit() {
       description: "Application created",
       color: "success",
     });
-    router.push(`/admin/admissions/applications/${res?.id || ""}`);
+    router.push(`/admin/admission/${res?.id || ""}/application-details`);
   } catch (e: any) {
     toast.add({
       title: "Failed",
@@ -119,7 +119,7 @@ async function submit() {
         color="secondary"
         variant="outline"
         icon="i-lucide-arrow-left"
-        to="/admin/admissions/applications"
+        to="/admin/admission/applications"
         >Back</UButton
       >
     </div>
@@ -283,7 +283,7 @@ async function submit() {
           <UButton
             variant="outline"
             color="secondary"
-            to="/admin/admissions/applications"
+            to="/admin/admission/applications"
             >Cancel</UButton
           >
           <UButton

@@ -155,7 +155,7 @@ function formatDate(d?: string | null) {
 }
 
 function goView(row: any) {
-  router.push(`/admin/admissions/applications/${row.id}`);
+  router.push(`/admin/admission/${row.id}/application-details`);
 }
 
 function onPageChange(p: number) {
@@ -249,10 +249,7 @@ const columns: TableColumn<Row>[] = [
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-semibold">Admission Applications</h1>
       <div class="flex gap-2">
-        <UButton
-          color="primary"
-          icon="i-lucide-plus"
-          to="/admin/admissions/applications/new"
+        <UButton color="primary" icon="i-lucide-plus" to="/admin/admission/form"
           >Offline Entry</UButton
         >
       </div>

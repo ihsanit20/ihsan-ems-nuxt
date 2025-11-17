@@ -77,7 +77,7 @@ onMounted(async () => {
       description: "Invalid application id",
       color: "error",
     });
-    router.replace("/admin/admissions/applications");
+    router.replace("/admin/admission/applications");
     return;
   }
   try {
@@ -161,7 +161,7 @@ async function submitAdmit() {
         color="secondary"
         variant="outline"
         icon="i-lucide-arrow-left"
-        to="/admin/admissions/applications"
+        to="/admin/admission/applications"
         >Back</UButton
       >
     </div>

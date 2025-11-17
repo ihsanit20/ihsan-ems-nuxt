@@ -21,7 +21,7 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
   {
     label: "Admissions",
     icon: "i-lucide-badge-plus",
-    to: "/admin/admissions/applications",
+    to: "/admin/admission/applications",
     exact: true,
   },
 
