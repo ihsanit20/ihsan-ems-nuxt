@@ -44,23 +44,24 @@ export const useAddressStore = defineStore("address", {
   }),
 
   getters: {
-    divisionItems: (state) =>
-      state.divisions.map((d) => ({ label: d.name, value: d.id })),
-
-    districtItems: (state) =>
-      state.districts.map((d) => ({ label: d.name, value: d.id })),
-
-    areaItems: (state) =>
-      state.areas.map((a) => ({ label: a.name, value: a.id })),
-
-    getDistrictsByDivision: (state) => (divisionId: number | null) => {
-      if (!divisionId) return [];
+    getDistrictsByDivision: (state) => (divisionId: number) => {
       return state.districts.filter((d) => d.division_id === divisionId);
     },
 
-    getAreasByDistrict: (state) => (districtId: number | null) => {
-      if (!districtId) return [];
+    getAreasByDistrict: (state) => (districtId: number) => {
       return state.areas.filter((a) => a.district_id === districtId);
+    },
+
+    getDivisionById: (state) => (id: number) => {
+      return state.divisions.find((d) => d.id === id);
+    },
+
+    getDistrictById: (state) => (id: number) => {
+      return state.districts.find((d) => d.id === id);
+    },
+
+    getAreaById: (state) => (id: number) => {
+      return state.areas.find((a) => a.id === id);
     },
   },
 

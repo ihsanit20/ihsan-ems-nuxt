@@ -31,8 +31,12 @@ const sessions = useSessionStore();
 const { items: sessionItems, loading: loadingSessions } = storeToRefs(sessions);
 
 const addressStore = useAddressStore();
-const { divisionItems, loadingDivisions, loadingDistricts, loadingAreas } =
+const { divisions, loadingDivisions, loadingDistricts, loadingAreas } =
   storeToRefs(addressStore);
+
+const divisionItems = computed(
+  () => divisions.value?.map((d: any) => ({ label: d.name, value: d.id })) || []
+);
 
 // Address lists (cascading)
 const presentDistricts = ref<any[]>([]);
@@ -45,6 +49,10 @@ const state = reactive({
   // Session/Class
   academic_session_id: undefined as number | undefined, // used in public mode
   session_grade_id: undefined as number | undefined,
+
+  // Application Type
+  application_type: "new" as "new" | "re_admission",
+  existing_student_id: undefined as number | undefined,
 
   // Applicant
   applicant_name: "",
@@ -86,6 +94,7 @@ const state = reactive({
   previous_institution_name: "",
   previous_class: "",
   previous_result: "",
+  previous_result_division: "",
 
   // Other
   residential_type: "" as
@@ -360,6 +369,7 @@ function doSubmit() {
     previous_institution_name: state.previous_institution_name.trim() || null,
     previous_class: state.previous_class.trim() || null,
     previous_result: state.previous_result.trim() || null,
+    previous_result_division: state.previous_result_division.trim() || null,
 
     residential_type: state.residential_type || null,
 
@@ -381,6 +391,30 @@ function doSubmit() {
 
       <div class="space-y-4">
         <div v-if="mode === 'public'" class="space-y-4">
+          <UFormField label="Application Type" name="application_type">
+            <URadioGroup
+              v-model="state.application_type"
+              :options="[
+                { label: 'New Admission', value: 'new' },
+                { label: 'Re-admission', value: 're_admission' },
+              ]"
+            />
+          </UFormField>
+
+          <UFormField
+            v-if="state.application_type === 're_admission'"
+            label="Existing Student ID"
+            name="existing_student_id"
+          >
+            <UInput
+              v-model="state.existing_student_id"
+              class="w-full"
+              type="number"
+              placeholder="Enter existing student ID"
+              :disabled="saving"
+            />
+          </UFormField>
+
           <UFormField
             label="Academic Session"
             required
@@ -742,6 +776,54 @@ function doSubmit() {
             :disabled="state.is_present_same_as_permanent || saving"
           />
         </UFormField>
+      </div>
+    </UCard>
+
+    <!-- Previous Institution -->
+    <UCard>
+      <template #header>
+        <h2 class="text-lg font-semibold">Previous Institution Information</h2>
+      </template>
+
+      <div class="space-y-4">
+        <UFormField
+          label="Previous Institution Name"
+          name="previous_institution_name"
+        >
+          <UInput
+            v-model="state.previous_institution_name"
+            class="w-full"
+            placeholder="Enter institution name"
+            :disabled="saving"
+          />
+        </UFormField>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <UFormField label="Class" name="previous_class">
+            <UInput
+              v-model="state.previous_class"
+              class="w-full"
+              placeholder="Enter class"
+              :disabled="saving"
+            />
+          </UFormField>
+          <UFormField label="Result" name="previous_result">
+            <UInput
+              v-model="state.previous_result"
+              class="w-full"
+              placeholder="e.g., GPA 5.00"
+              :disabled="saving"
+            />
+          </UFormField>
+          <UFormField label="Division/Group" name="previous_result_division">
+            <UInput
+              v-model="state.previous_result_division"
+              class="w-full"
+              placeholder="e.g., Science"
+              :disabled="saving"
+            />
+          </UFormField>
+        </div>
       </div>
     </UCard>
 

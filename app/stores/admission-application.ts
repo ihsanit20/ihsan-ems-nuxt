@@ -96,6 +96,19 @@ export type AdmissionApplication = {
   created_at?: string;
   updated_at?: string;
 
+  // Appended attributes from backend
+  formatted_present_address?: string | null;
+  formatted_permanent_address?: string | null;
+
+  // NEW: name-wise appended attributes
+  present_division_name?: string | null;
+  present_district_name?: string | null;
+  present_area_name?: string | null;
+
+  permanent_division_name?: string | null;
+  permanent_district_name?: string | null;
+  permanent_area_name?: string | null;
+
   // relations (from controller ->with(...))
   session?: {
     id: number;
@@ -176,7 +189,7 @@ export const useAdmissionApplicationStore = defineStore(
       stats: null as AdmissionStats | null,
 
       // flags
-      loading: false,
+      loading: true,
       saving: false,
       removing: false,
       metaLoading: false,
@@ -257,7 +270,6 @@ export const useAdmissionApplicationStore = defineStore(
       /* ---------- GET /v1/admission-applications (Admin) ---------- */
       async fetchList() {
         const { $api } = useNuxtApp();
-        this.loading = true;
         this.error = "";
         try {
           const res = await $api<Paginated<AdmissionApplication>>(
@@ -286,7 +298,6 @@ export const useAdmissionApplicationStore = defineStore(
       /* ---------- GET /v1/admission-applications/{id} ---------- */
       async fetchOne(id: number) {
         const { $api } = useNuxtApp();
-        this.loading = true;
         this.error = "";
         try {
           const app = await $api<AdmissionApplication>(
@@ -574,7 +585,7 @@ export const useAdmissionApplicationStore = defineStore(
           if (idx !== -1 && updated) this.items[idx] = updated;
           if (this.current?.id === id && updated) this.current = updated;
 
-          return res; // চাইলে component থেকে student/enrollment ব্যবহার করতে পারবে
+          return res; // component থেকে student/enrollment ব্যবহার করতে পারবে
         } catch (e: any) {
           this.error =
             e?.data?.message ||

@@ -26,10 +26,12 @@ const statusForm = reactive({
 
 const admitOpen = ref(false);
 const admitForm = reactive({
-  section_id: null as number | null,
+  section_id: undefined as number | undefined,
   roll_no: "",
   admission_date: new Date().toISOString().split("T")[0],
 });
+
+const statusOpen = ref(false);
 
 function statusColor(status?: string) {
   switch (status) {
@@ -82,10 +84,13 @@ onMounted(async () => {
   }
   try {
     await apps.fetchOne(id.value);
-    if (apps.current?.session_grade_id) {
-      await sections.fetchListBySession(apps.current.session_grade_id);
+    if (apps.current) {
+      if (apps.current.session_grade_id) {
+        await sections.fetchListBySession(apps.current.session_grade_id);
+      }
     }
     statusForm.status = (apps.current?.status as any) || "pending";
+    statusForm.status_note = apps.current?.status_note || "";
   } catch (e: any) {
     toast.add({
       title: "Failed",
@@ -116,6 +121,7 @@ async function submitStatus() {
       description: "Status updated",
       color: "success",
     });
+    statusOpen.value = false;
   } catch (e: any) {
     toast.add({
       title: "Failed",
@@ -129,7 +135,7 @@ async function submitAdmit() {
   if (!id.value) return;
   try {
     await apps.admit(id.value, {
-      section_id: admitForm.section_id || undefined,
+      section_id: admitForm.section_id,
       roll_no: admitForm.roll_no || undefined,
       admission_date: admitForm.admission_date || undefined,
     });
@@ -153,17 +159,21 @@ async function submitAdmit() {
 <template>
   <UContainer>
     <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-semibold">Application Details</h1>
-        <p class="text-sm text-gray-500">Review and manage this application.</p>
+      <div class="flex items-center gap-2">
+        <UButton
+          color="secondary"
+          variant="outline"
+          icon="i-lucide-arrow-left"
+          to="/admin/admission/applications"
+          >Back</UButton
+        >
+        <div>
+          <h1 class="text-2xl font-semibold">Application Details</h1>
+          <p class="text-sm text-gray-500">
+            Review and manage this application.
+          </p>
+        </div>
       </div>
-      <UButton
-        color="secondary"
-        variant="outline"
-        icon="i-lucide-arrow-left"
-        to="/admin/admission/applications"
-        >Back</UButton
-      >
     </div>
 
     <UAlert
@@ -188,266 +198,391 @@ async function submitAdmit() {
     </UCard>
 
     <template v-else>
-      <!-- Header summary -->
-      <UCard class="mb-6">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <div class="text-sm text-gray-500">Application No</div>
-              <div class="text-xl font-semibold">
-                {{ current?.application_no }}
+      <div class="space-y-4">
+        <!-- Header summary -->
+        <UCard class="">
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="text-sm text-gray-500">Application No</div>
+                <div class="text-xl font-semibold">
+                  {{ current?.application_no }}
+                </div>
               </div>
-            </div>
-            <UBadge
-              :color="statusColor(current?.status)"
-              variant="soft"
-              size="lg"
-            >
-              <UIcon :name="statusIcon(current?.status)" class="h-4 w-4 mr-1" />
-              {{ current?.status?.toUpperCase() }}
-            </UBadge>
-          </div>
-        </template>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <div class="text-sm text-gray-500">Session</div>
-            <div class="font-medium">{{ current?.session?.name || "-" }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Class</div>
-            <div class="font-medium">
-              {{
-                current?.session_grade?.grade?.name ||
-                `#${current?.session_grade_id}`
-              }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Applied On</div>
-            <div class="font-medium">{{ formatDate(current?.created_at) }}</div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Basic Info -->
-      <UCard class="mb-6">
-        <template #header
-          ><h2 class="text-lg font-semibold">Basic Information</h2></template
-        >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div class="text-sm text-gray-500">Applicant Name</div>
-            <div class="font-medium">{{ current?.applicant_name }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Gender</div>
-            <div class="font-medium capitalize">
-              {{ current?.gender || "-" }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Date of Birth</div>
-            <div class="font-medium">
-              {{ formatDate(current?.date_of_birth) }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Phone</div>
-            <div class="font-medium">{{ current?.student_phone || "-" }}</div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Email</div>
-            <div class="font-medium">{{ current?.student_email || "-" }}</div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Parents & Guardian -->
-      <UCard class="mb-6">
-        <template #header
-          ><h2 class="text-lg font-semibold">Parents & Guardian</h2></template
-        >
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <div class="text-sm text-gray-500">Father's Name</div>
-            <div class="font-medium">{{ current?.father_name || "-" }}</div>
-            <div class="text-sm text-gray-500 mt-2">Phone</div>
-            <div class="font-medium">{{ current?.father_phone || "-" }}</div>
-            <div class="text-sm text-gray-500 mt-2">Occupation</div>
-            <div class="font-medium">
-              {{ current?.father_occupation || "-" }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Mother's Name</div>
-            <div class="font-medium">{{ current?.mother_name || "-" }}</div>
-            <div class="text-sm text-gray-500 mt-2">Phone</div>
-            <div class="font-medium">{{ current?.mother_phone || "-" }}</div>
-            <div class="text-sm text-gray-500 mt-2">Occupation</div>
-            <div class="font-medium">
-              {{ current?.mother_occupation || "-" }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Guardian</div>
-            <div class="font-medium">
-              {{ current?.guardian_name || "-"
-              }}<span v-if="current?.guardian_type">
-                ({{ current?.guardian_type }})</span
+              <UBadge
+                :color="statusColor(current?.status)"
+                variant="soft"
+                size="lg"
               >
+                <UIcon
+                  :name="statusIcon(current?.status)"
+                  class="h-4 w-4 mr-1"
+                />
+                {{ current?.status?.toUpperCase() }}
+              </UBadge>
             </div>
-            <div class="text-sm text-gray-500 mt-2">Phone</div>
-            <div class="font-medium">{{ current?.guardian_phone || "-" }}</div>
-            <div class="text-sm text-gray-500 mt-2">Relation</div>
-            <div class="font-medium">
-              {{ current?.guardian_relation || "-" }}
-            </div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Addresses -->
-      <UCard class="mb-6">
-        <template #header
-          ><h2 class="text-lg font-semibold">Addresses</h2></template
-        >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div class="text-sm text-gray-500">Present Address</div>
-            <div class="font-medium">
-              {{
-                current?.present_address
-                  ? [
-                      current?.present_address?.house,
-                      current?.present_address?.road,
-                      current?.present_address?.village,
-                      current?.present_address?.post_office,
-                      current?.present_address?.upazila,
-                      current?.present_address?.district,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")
-                  : "-"
-              }}
-            </div>
-          </div>
-          <div>
-            <div class="text-sm text-gray-500">Permanent Address</div>
-            <div class="font-medium">
-              {{
-                current?.permanent_address
-                  ? [
-                      current?.permanent_address?.house,
-                      current?.permanent_address?.road,
-                      current?.permanent_address?.village,
-                      current?.permanent_address?.post_office,
-                      current?.permanent_address?.upazila,
-                      current?.permanent_address?.district,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")
-                  : "-"
-              }}
-            </div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Previous & Notes / Status -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <UCard class="md:col-span-2">
-          <template #header
-            ><h2 class="text-lg font-semibold">
-              Previous / Additional
-            </h2></template
-          >
+          </template>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <div class="text-sm text-gray-500">Previous Institution</div>
+              <div class="text-sm text-gray-500">Session</div>
+              <div class="font-medium">{{ current?.session?.name || "-" }}</div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Class</div>
               <div class="font-medium">
-                {{ current?.previous_institution_name || "-" }}
+                {{
+                  current?.session_grade?.grade?.name ||
+                  `#${current?.session_grade_id}`
+                }}
               </div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">Previous Class</div>
+              <div class="text-sm text-gray-500">Applied On</div>
               <div class="font-medium">
-                {{ current?.previous_class || "-" }}
-              </div>
-            </div>
-            <div>
-              <div class="text-sm text-gray-500">Result</div>
-              <div class="font-medium">
-                {{ current?.previous_result || "-" }}
-              </div>
-            </div>
-            <div>
-              <div class="text-sm text-gray-500">Residential Type</div>
-              <div class="font-medium capitalize">
-                {{ current?.residential_type || "-" }}
+                {{ formatDate(current?.created_at) }}
               </div>
             </div>
           </div>
         </UCard>
 
-        <UCard>
+        <!-- Basic Info -->
+        <UCard class="">
           <template #header
-            ><h2 class="text-lg font-semibold">Update Status</h2></template
+            ><h2 class="text-lg font-semibold">Basic Information</h2></template
           >
-          <div class="space-y-4">
-            <UFormField label="Status">
-              <USelect
-                v-model="statusForm.status"
-                :options="[
-                  { label: 'Pending', value: 'pending' },
-                  { label: 'Accepted', value: 'accepted' },
-                  { label: 'Admitted', value: 'admitted' },
-                  { label: 'Rejected', value: 'rejected' },
-                ]"
-              />
-            </UFormField>
-            <UFormField label="Note">
-              <UTextarea
-                v-model="statusForm.status_note"
-                placeholder="Optional note"
-              />
-            </UFormField>
-            <div class="flex justify-end">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div class="text-sm text-gray-500">Applicant Name</div>
+              <div class="font-medium">{{ current?.applicant_name }}</div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Application Type</div>
+              <div class="font-medium capitalize">
+                {{ current?.application_type?.replace("_", " ") || "New" }}
+                <span v-if="current?.application_type === 're_admission'">
+                  ({{ current?.existing_student_id || "ID not found" }})
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Gender</div>
+              <div class="font-medium capitalize">
+                {{ current?.gender || "-" }}
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Date of Birth</div>
+              <div class="font-medium">
+                {{ formatDate(current?.date_of_birth) }}
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Phone</div>
+              <div class="font-medium">{{ current?.student_phone || "-" }}</div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Email</div>
+              <div class="font-medium">{{ current?.student_email || "-" }}</div>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Parents & Guardian -->
+        <UCard class="">
+          <template #header
+            ><h2 class="text-lg font-semibold">Parents & Guardian</h2></template
+          >
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div class="text-sm text-gray-500">Father's Name</div>
+              <div class="font-medium">{{ current?.father_name || "-" }}</div>
+              <div class="text-sm text-gray-500 mt-2">Phone</div>
+              <div class="font-medium">{{ current?.father_phone || "-" }}</div>
+              <div class="text-sm text-gray-500 mt-2">Occupation</div>
+              <div class="font-medium">
+                {{ current?.father_occupation || "-" }}
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Mother's Name</div>
+              <div class="font-medium">{{ current?.mother_name || "-" }}</div>
+              <div class="text-sm text-gray-500 mt-2">Phone</div>
+              <div class="font-medium">{{ current?.mother_phone || "-" }}</div>
+              <div class="text-sm text-gray-500 mt-2">Occupation</div>
+              <div class="font-medium">
+                {{ current?.mother_occupation || "-" }}
+              </div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Guardian</div>
+              <div class="font-medium">
+                {{ current?.guardian_name || "-"
+                }}<span v-if="current?.guardian_type">
+                  ({{ current?.guardian_type }})</span
+                >
+              </div>
+              <div class="text-sm text-gray-500 mt-2">Phone</div>
+              <div class="font-medium">
+                {{ current?.guardian_phone || "-" }}
+              </div>
+              <div class="text-sm text-gray-500 mt-2">Relation</div>
+              <div class="font-medium">
+                {{ current?.guardian_relation || "-" }}
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Addresses -->
+        <UCard class="">
+          <template #header>
+            <h2 class="text-lg font-semibold">Addresses</h2>
+          </template>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Present Address -->
+            <div class="space-y-2">
+              <div class="text-sm text-gray-500">Present Address</div>
+              <div class="font-medium">
+                {{ current?.formatted_present_address || "-" }}
+              </div>
+
+              <div
+                v-if="current?.present_address"
+                class="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-500"
+              >
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    Division
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.present_division_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    District
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.present_district_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">Area</div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.present_area_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    Village / Holding
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.present_address?.village_house_holding || "-" }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Permanent Address -->
+            <div class="space-y-2">
+              <div class="text-sm text-gray-500">Permanent Address</div>
+
+              <div class="font-medium">
+                <span v-if="current?.is_present_same_as_permanent">
+                  Same as present address
+                </span>
+                <span v-else>
+                  {{ current?.formatted_permanent_address || "-" }}
+                </span>
+              </div>
+
+              <div
+                v-if="
+                  !current?.is_present_same_as_permanent &&
+                  current?.permanent_address
+                "
+                class="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-500"
+              >
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    Division
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.permanent_division_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    District
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.permanent_district_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">Area</div>
+                  <div class="font-medium text-gray-800">
+                    {{ current?.permanent_area_name || "-" }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-wide">
+                    Village / Holding
+                  </div>
+                  <div class="font-medium text-gray-800">
+                    {{
+                      current?.permanent_address?.village_house_holding || "-"
+                    }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Previous & Notes / Status -->
+        <div class="grid md:grid-cols-2 gap-4">
+          <UCard class="lg:col-span-2">
+            <template #header
+              ><h2 class="text-lg font-semibold">
+                Previous / Additional
+              </h2></template
+            >
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div class="text-sm text-gray-500">Previous Institution</div>
+                <div class="font-medium">
+                  {{ current?.previous_institution_name || "-" }}
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Previous Class</div>
+                <div class="font-medium">
+                  {{ current?.previous_class || "-" }}
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Result</div>
+                <div class="font-medium">
+                  {{ current?.previous_result || "-" }}
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Division/Group</div>
+                <div class="font-medium">
+                  {{ current?.previous_result_division || "-" }}
+                </div>
+              </div>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div>
+              <div class="text-sm text-gray-500">Residential Type</div>
+              <div class="font-medium capitalize">
+                {{ current?.residential_type?.replace("_", " ") || "-" }}
+              </div>
+            </div>
+          </UCard>
+
+          <UCard>
+            <div class="flex items-center justify-between">
+              <div class="space-y-1">
+                <h2 class="text-lg font-semibold">Update Status</h2>
+                <p class="text-sm text-gray-500">
+                  Change the application status.
+                </p>
+              </div>
               <UButton
-                :loading="saving"
-                :disabled="saving"
-                icon="i-lucide-save"
-                @click="submitStatus"
-                >Save</UButton
+                icon="i-lucide-edit"
+                color="secondary"
+                @click="statusOpen = true"
+                >Update</UButton
               >
             </div>
+          </UCard>
+        </div>
+
+        <!-- Admit student -->
+        <UCard class="mb-10">
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <div class="text-sm text-gray-500">Admit Student</div>
+              <div class="text-sm text-gray-500">
+                Create student record & enrollment from this application.
+              </div>
+            </div>
+            <UButton
+              color="primary"
+              icon="i-lucide-check"
+              :disabled="current?.status === 'admitted'"
+              @click="admitOpen = true"
+              >Admit</UButton
+            >
           </div>
         </UCard>
       </div>
 
-      <!-- Admit student -->
-      <UCard class="mb-10">
-        <div class="flex items-center justify-between">
-          <div class="space-y-1">
-            <div class="text-sm text-gray-500">Admit Student</div>
-            <div class="text-sm text-gray-500">
-              Create student record & enrollment from this application.
-            </div>
+      <UModal
+        :open="statusOpen"
+        @update:open="statusOpen = $event"
+        title="Update Status"
+        description="Change the application status and add an optional note."
+        :prevent-close="saving"
+        :closeable="!saving"
+        :ui="{ footer: 'justify-end' }"
+      >
+        <template #body>
+          <div class="space-y-4">
+            <UFormField label="Status">
+              <USelect
+                v-model="statusForm.status"
+                :items="[
+                  { label: 'Pending', value: 'pending' },
+                  { label: 'Accepted', value: 'accepted' },
+                  { label: 'Rejected', value: 'rejected' },
+                ]"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="Note (Optional)">
+              <UTextarea
+                v-model="statusForm.status_note"
+                placeholder="Reason for status change"
+                class="w-full"
+              />
+            </UFormField>
           </div>
+        </template>
+        <template #footer>
+          <UButton
+            variant="outline"
+            color="secondary"
+            :disabled="saving"
+            @click="statusOpen = false"
+            >Cancel</UButton
+          >
           <UButton
             color="primary"
-            icon="i-lucide-check"
-            :disabled="current?.status === 'admitted'"
-            @click="admitOpen = true"
-            >Admit</UButton
+            :loading="saving"
+            :disabled="saving"
+            @click="submitStatus"
+            >Save Status</UButton
           >
-        </div>
-      </UCard>
+        </template>
+      </UModal>
 
-      <UModal v-model="admitOpen">
-        <UCard>
-          <template #header
-            ><h3 class="text-lg font-semibold">Admit Student</h3></template
-          >
+      <UModal
+        :open="admitOpen"
+        @update:open="admitOpen = $event"
+        title="Admit Student"
+        description="Create a student record from this application."
+        :prevent-close="saving"
+        :closeable="!saving"
+        :ui="{ footer: 'justify-end' }"
+      >
+        <template #body>
           <div class="space-y-4">
             <UAlert
               v-if="!current?.session_grade_id"
@@ -459,39 +594,47 @@ async function submitAdmit() {
             <UFormField label="Section">
               <USelect
                 v-model="admitForm.section_id"
-                :options="sectionOptions"
+                :items="sectionOptions"
                 :disabled="!current?.session_grade_id"
                 placeholder="Select section"
                 clearable
+                class="w-full"
               />
             </UFormField>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="Roll No">
-                <UInput v-model="admitForm.roll_no" placeholder="Optional" />
+                <UInput
+                  v-model="admitForm.roll_no"
+                  placeholder="Optional"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="Admission Date">
-                <UInput v-model="admitForm.admission_date" type="date" />
+                <UInput
+                  v-model="admitForm.admission_date"
+                  type="date"
+                  class="w-full"
+                />
               </UFormField>
             </div>
           </div>
-          <template #footer>
-            <div class="flex justify-end gap-2">
-              <UButton
-                variant="outline"
-                color="secondary"
-                @click="admitOpen = false"
-                >Cancel</UButton
-              >
-              <UButton
-                color="primary"
-                :loading="saving"
-                :disabled="saving || !current?.session_grade_id"
-                @click="submitAdmit"
-                >Admit</UButton
-              >
-            </div>
-          </template>
-        </UCard>
+        </template>
+        <template #footer>
+          <UButton
+            variant="outline"
+            color="secondary"
+            :disabled="saving"
+            @click="admitOpen = false"
+            >Cancel</UButton
+          >
+          <UButton
+            color="primary"
+            :loading="saving"
+            :disabled="saving || !current?.session_grade_id"
+            @click="submitAdmit"
+            >Admit</UButton
+          >
+        </template>
       </UModal>
     </template>
   </UContainer>

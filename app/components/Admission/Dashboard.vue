@@ -188,31 +188,5 @@ function colorFor(key: string) {
         </div>
       </UCard>
     </div>
-
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold">Applications by Session</h3>
-          <div
-            v-if="statsLoading"
-            class="text-xs text-gray-500 flex items-center gap-1"
-          >
-            <UIcon name="i-lucide-loader-2" class="h-3 w-3 animate-spin" />
-            Loading
-          </div>
-        </div>
-      </template>
-      <UTable
-        :rows="bySessionRows || []"
-        :columns="[
-          { key: 'session', label: 'Session', id: 'session' },
-          { key: 'count', label: 'Count', id: 'count' }
-        ] as any[]"
-      >
-        <template #empty>
-          <div class="text-center py-8 text-gray-500 text-sm">No data</div>
-        </template>
-      </UTable>
-    </UCard>
   </div>
 </template>
