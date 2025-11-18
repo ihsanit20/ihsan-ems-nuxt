@@ -25,6 +25,13 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     exact: true,
   },
 
+  {
+    label: "Students",
+    icon: "i-lucide-users",
+    to: "/admin/students",
+    exact: true,
+  },
+
   // {
   //   label: "Attendance",
   //   icon: "i-lucide-check-square",
