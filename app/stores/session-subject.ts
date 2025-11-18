@@ -1,46 +1,5 @@
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type SessionSubject = {
-  id: number;
-  session_id: number;
-  subject_id: number;
-  sort_order: number;
-  book_name?: string | null;
-
-  // eager-loaded relations (from ->with(['subject', 'academicSession']))
-  subject?: {
-    id: number;
-    name: string;
-    code?: string | null;
-  } | null;
-
-  academic_session?: {
-    id: number;
-    name: string;
-    start_date?: string | null;
-    end_date?: string | null;
-    is_active?: boolean;
-  } | null;
-
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type SessionSubjectFilters = {
-  session_id?: number;
-  subject_id?: number;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { SessionSubject, SessionSubjectFilters, Paginated } from "~/types";
 
 type SessionSubjectCreatePayload = {
   subject_id: number;

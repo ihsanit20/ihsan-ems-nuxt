@@ -1,34 +1,6 @@
 // app/stores/address.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-
-export type Division = {
-  id: number;
-  name: string;
-  en_name: string;
-};
-
-export type District = {
-  id: number;
-  division_id: number;
-  name: string;
-  en_name: string;
-};
-
-export type Area = {
-  id: number;
-  district_id: number;
-  name: string;
-  en_name: string;
-};
-
-export type AddressData = {
-  division_id: number | undefined;
-  district_id: number | undefined;
-  area_id?: number | undefined;
-  village_house_holding: string;
-};
+import type { Division, District, Area } from "~/types";
 
 /* ---------- Store ---------- */
 

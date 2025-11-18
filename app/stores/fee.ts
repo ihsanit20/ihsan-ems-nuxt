@@ -1,37 +1,12 @@
 // app/stores/fee.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type BillingType = "one_time" | "recurring";
-export type RecurringCycle = "monthly" | "yearly" | "term";
-
-export type Fee = {
-  id: number;
-  name: string;
-  billing_type: BillingType;
-  recurring_cycle: RecurringCycle | null;
-  sort_order: number;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type FeeFilters = {
-  q?: string;
-  billing_type?: BillingType;
-  recurring_cycle?: RecurringCycle;
-  is_active?: boolean;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type {
+  Fee,
+  FeeFilters,
+  BillingType,
+  RecurringCycle,
+  Paginated,
+} from "~/types";
 
 export const useFeeStore = defineStore("fees", {
   state: () => ({

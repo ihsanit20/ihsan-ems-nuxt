@@ -1,31 +1,6 @@
 // app/stores/academic-session.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type AcademicSession = {
-  id: number;
-  name: string;
-  start_date: string; // YYYY-MM-DD or ISO
-  end_date: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type SessionFilters = {
-  active?: boolean | null;
-  q?: string;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { AcademicSession, SessionFilters, Paginated } from "~/types";
 
 /* ---------- Store ---------- */
 export const useSessionStore = defineStore("sessions", {

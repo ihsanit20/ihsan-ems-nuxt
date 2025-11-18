@@ -1,14 +1,6 @@
 // app/stores/auth.ts
 import { defineStore } from "pinia";
-
-type AuthUser = {
-  id: number;
-  name: string;
-  phone?: string | null;
-  email?: string | null;
-  role?: string | null;
-  photo?: string | null;
-};
+import type { AuthUser } from "~/types";
 
 type AuthState = {
   token: string;

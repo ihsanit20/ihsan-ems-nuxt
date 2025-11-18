@@ -7,6 +7,7 @@ definePageMeta({
 });
 
 import { useHead, useToast } from "#imports";
+import type { SessionGrade, Grade } from "~/types";
 
 useHead({ title: "Session Details" });
 

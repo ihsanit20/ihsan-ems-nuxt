@@ -12,10 +12,8 @@ import { storeToRefs } from "pinia";
 import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
 import type { SelectItem } from "@nuxt/ui";
-import {
-  useSessionStore,
-  type AcademicSession,
-} from "~/stores/academic-session";
+import { useSessionStore } from "~/stores/academic-session";
+import type { AcademicSession } from "~/types";
 
 /* ---------------- UI resolves ---------------- */
 const UButton = resolveComponent("UButton");

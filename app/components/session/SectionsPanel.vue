@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from "vue";
 import { useToast } from "#imports";
-import { useSectionStore, type Section } from "~/stores/section";
+import { useSectionStore } from "~/stores/section";
+import type { Section } from "~/types";
 
 const props = defineProps<{ sessionGradeId: number }>();
 

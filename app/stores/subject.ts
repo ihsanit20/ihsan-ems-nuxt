@@ -1,32 +1,6 @@
 // app/stores/subject.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type Subject = {
-  id: number;
-  grade_id: number;
-  name: string;
-  code: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type SubjectFilters = {
-  grade_id?: number;
-  q?: string; // search (name/code)
-  only_active?: boolean;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { Subject, SubjectFilters, Paginated } from "~/types";
 
 export const useSubjectStore = defineStore("subjects", {
   state: () => ({

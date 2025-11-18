@@ -1,33 +1,5 @@
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type SessionGrade = {
-  id: number;
-  academic_session_id: number;
-  grade_id: number;
-
-  // eager (optional)
-  grade?: { id: number; name: string; code?: string | null };
-
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type SessionGradeFilters = {
-  // when listing by session
-  session_id?: number; // required for /sessions/{session}/classes
-  grade_id?: number;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { SessionGrade, SessionGradeFilters, Paginated } from "~/types";
 
 export const useSessionGradeStore = defineStore("session-grades", {
   state: () => ({

@@ -1,25 +1,6 @@
 // app/stores/section.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type Section = {
-  id: number;
-  session_grade_id: number;
-  name: string;
-  code?: string | null;
-  capacity?: number | null;
-  class_teacher_id?: number | null;
-  sort_order?: number | null;
-  created_at?: string;
-  updated_at?: string;
-
-  class_teacher?: { id: number; name: string } | null;
-};
-
-export type SectionFilters = {
-  session_grade_id?: number;
-  search?: string;
-};
+import type { Section, SectionFilters } from "~/types";
 
 export const useSectionStore = defineStore("sections", {
   state: () => ({

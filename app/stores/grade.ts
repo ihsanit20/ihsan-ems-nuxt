@@ -1,39 +1,5 @@
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type Grade = {
-  id: number;
-  level_id: number; // ✅ NEW
-  name: string;
-  code?: string | null;
-  sort_order?: number | null;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-
-  // optional embed if ?with=level ব্যবহার করো
-  level?: {
-    id: number;
-    name: string;
-    code?: string | null;
-  };
-};
-
-export type GradeFilters = {
-  level_id?: number; // ✅ NEW (filter)
-  is_active?: boolean | null;
-  q?: string;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { Grade, GradeFilters, Paginated } from "~/types";
 
 /* ---------- Store ---------- */
 export const useGradeStore = defineStore("grades", {

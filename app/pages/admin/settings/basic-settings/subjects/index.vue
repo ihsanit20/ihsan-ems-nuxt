@@ -9,7 +9,7 @@ definePageMeta({
 import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
 import type { TableColumn, SelectItem } from "@nuxt/ui";
-import type { Subject } from "~/stores/subject";
+import type { Subject } from "~/types";
 
 /* ---------------- UI component resolves ---------------- */
 const UButton = resolveComponent("UButton");

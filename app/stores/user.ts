@@ -1,35 +1,6 @@
 // app/stores/user.ts
 import { defineStore } from "pinia";
-
-/** Basic User shape (matches your API) */
-export type User = {
-  id: number;
-  name: string;
-  phone: string;
-  email?: string | null;
-  role?: string | null;
-  photo?: string | null; // stored path
-  photo_url?: string | null; // accessor URL
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type UserFilters = {
-  q?: string;
-  role?: string | null;
-  page?: number;
-  per_page?: number;
-  sort_by?: "id" | "name" | "email" | "phone" | "role" | "created_at";
-  sort_dir?: "asc" | "desc";
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { User, UserFilters, Paginated } from "~/types";
 
 function toFormData(payload: Record<string, any>): FormData {
   const fd = new FormData();

@@ -1,31 +1,6 @@
 // ~/stores/level.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type Level = {
-  id: number;
-  name: string;
-  code?: string | null;
-  sort_order?: number | null;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type LevelFilters = {
-  is_active?: boolean | null;
-  q?: string;
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { Level, LevelFilters, Paginated } from "~/types";
 
 /* ---------- Store ---------- */
 export const useLevelStore = defineStore("levels", {

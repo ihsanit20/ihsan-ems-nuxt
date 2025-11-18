@@ -1,45 +1,6 @@
 // app/stores/session-fee.ts
 import { defineStore } from "pinia";
-import type { BillingType, RecurringCycle } from "./fee";
-
-/* ---------- Types ---------- */
-export type SessionFee = {
-  id: number;
-  academic_session_id: number;
-  grade_id: number;
-  fee_id: number;
-  amount: number | string;
-  created_at?: string;
-  updated_at?: string;
-
-  // Eager loaded relations (optional)
-  session?: { id: number; name: string };
-  grade?: { id: number; name: string };
-  fee?: {
-    id: number;
-    name: string;
-    billing_type: BillingType;
-    recurring_cycle: RecurringCycle | null;
-  };
-};
-
-export type SessionFeeFilters = {
-  academic_session_id?: number;
-  grade_id?: number;
-  fee_id?: number;
-  q?: string;
-  only_active?: boolean; // active fees only (fee.is_active == true)
-  page?: number;
-  per_page?: number;
-};
-
-type Paginated<T> = {
-  data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-};
+import type { SessionFee, SessionFeeFilters, Paginated } from "~/types";
 
 export const useSessionFeeStore = defineStore("session-fees", {
   state: () => ({

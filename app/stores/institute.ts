@@ -1,29 +1,10 @@
 // app/stores/institute.ts
 import { defineStore } from "pinia";
-
-/* ---------- Types ---------- */
-export type InstituteNames = {
-  en?: string | null;
-  bn?: string | null;
-  ar?: string | null;
-};
-
-export type InstituteContact = {
-  address: string;
-  phone?: string | null;
-  email?: string | null;
-  website?: string | null;
-  social?: {
-    facebook?: string | null;
-    youtube?: string | null;
-    whatsapp?: string | null;
-  } | null;
-};
-
-export type InstituteProfile = {
-  names: InstituteNames | null;
-  contact: InstituteContact;
-};
+import type {
+  InstituteProfile,
+  InstituteNames,
+  InstituteContact,
+} from "~/types";
 
 const ENDPOINT = "/v1/institute/profile";
 

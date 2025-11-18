@@ -10,8 +10,7 @@ definePageMeta({
 import { ref, reactive, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useHead, useToast } from "#imports";
-import type { SessionSubject } from "~/stores/session-subject";
-import type { Subject } from "~/stores/subject";
+import type { SessionSubject, Subject } from "~/types";
 
 useHead({ title: "Session Subjects" });
 

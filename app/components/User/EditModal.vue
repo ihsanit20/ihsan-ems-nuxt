@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, watch, computed } from "vue";
-import { useUserStore, type User } from "@/stores/user";
+import { useUserStore } from "@/stores/user";
+import type { User } from "~/types";
 import { useToast } from "#imports";
 import type { FormError, FormSubmitEvent } from "@nuxt/ui";
 

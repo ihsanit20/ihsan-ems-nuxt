@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, h, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useUserStore, type User } from "@/stores/user";
+import { useUserStore } from "@/stores/user";
+import type { User } from "~/types";
 import { useToast } from "#imports";
 import { useDebounceFn } from "@vueuse/core";
 import type { TableColumn } from "@nuxt/ui";

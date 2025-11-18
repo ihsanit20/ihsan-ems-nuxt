@@ -9,8 +9,7 @@ definePageMeta({
 import { ref, reactive, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useHead, useToast } from "#imports";
-import type { SessionFee } from "~/stores/session-fee";
-import type { Fee } from "~/stores/fee";
+import type { SessionFee, Fee } from "~/types";
 
 useHead({ title: "Session Fees" });
 
