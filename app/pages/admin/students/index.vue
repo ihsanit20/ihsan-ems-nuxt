@@ -52,7 +52,7 @@ const {
 
 /* ---------------- Filter Options ---------------- */
 const statusItems: SelectItem[] = [
-  { label: "All Status", value: "" },
+  { label: "All Status", value: null },
   { label: "Active", value: "active" },
   { label: "Inactive", value: "inactive" },
   { label: "Passed", value: "passed" },
@@ -61,14 +61,14 @@ const statusItems: SelectItem[] = [
 ];
 
 const genderItems: SelectItem[] = [
-  { label: "All Genders", value: "" },
+  { label: "All Genders", value: null },
   { label: "Male", value: "male" },
   { label: "Female", value: "female" },
   { label: "Other", value: "other" },
 ];
 
 const residentialItems: SelectItem[] = [
-  { label: "All Types", value: "" },
+  { label: "All Types", value: null },
   { label: "Residential", value: "residential" },
   { label: "New Musafir", value: "new_musafir" },
   { label: "Non Residential", value: "non_residential" },

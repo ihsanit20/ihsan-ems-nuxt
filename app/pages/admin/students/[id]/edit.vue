@@ -9,7 +9,7 @@ definePageMeta({
 import { useHead, useToast } from "#imports";
 import type { Student, Gender, ResidentialType, GuardianType } from "~/types";
 
-type SelectItem = { label: string; value: any };
+type SelectItem = { label: string; value: number | string | null };
 
 const route = useRoute();
 const studentId = computed(() => Number(route.params.id));
@@ -49,37 +49,31 @@ const form = reactive({
   admission_date: "",
 
   // Father Information
-  father_name_bn: "",
-  father_name_en: "",
-  father_nid: "",
+  father_name: "",
   father_phone: "",
   father_occupation: "",
 
   // Mother Information
-  mother_name_bn: "",
-  mother_name_en: "",
-  mother_nid: "",
+  mother_name: "",
   mother_phone: "",
   mother_occupation: "",
 
   // Guardian Information
   guardian_type: null as GuardianType | null,
-  guardian_name_bn: "",
-  guardian_name_en: "",
+  guardian_name: "",
   guardian_phone: "",
   guardian_relation: "",
-  guardian_nid: "",
 
   // Present Address
   present_division_id: null as number | null,
   present_district_id: null as number | null,
-  present_upazila_id: null as number | null,
+  present_area_id: null as number | null,
   present_address_details: "",
 
   // Permanent Address
   permanent_division_id: null as number | null,
   permanent_district_id: null as number | null,
-  permanent_upazila_id: null as number | null,
+  permanent_area_id: null as number | null,
   permanent_address_details: "",
   same_as_present: false,
 
@@ -165,12 +159,12 @@ const presentDistrictItems = computed<SelectItem[]>(() => {
   ];
 });
 
-const presentUpazilaItems = computed<SelectItem[]>(() => {
+const presentAreaItems = computed<SelectItem[]>(() => {
   if (!form.present_district_id) return [];
   return [
-    { label: "Select Upazila", value: null },
+    { label: "Select Area", value: null },
     ...(addressStore.getAreasByDistrict(form.present_district_id) || []).map(
-      (u: any) => ({
+      (u: { id: number; name: string }) => ({
         label: u.name,
         value: u.id,
       })
@@ -191,12 +185,12 @@ const permanentDistrictItems = computed<SelectItem[]>(() => {
   ];
 });
 
-const permanentUpazilaItems = computed<SelectItem[]>(() => {
+const permanentAreaItems = computed<SelectItem[]>(() => {
   if (!form.permanent_district_id) return [];
   return [
-    { label: "Select Upazila", value: null },
+    { label: "Select Area", value: null },
     ...(addressStore.getAreasByDistrict(form.permanent_district_id) || []).map(
-      (u: any) => ({
+      (u: { id: number; name: string }) => ({
         label: u.name,
         value: u.id,
       })
@@ -211,12 +205,64 @@ async function loadStudent() {
     const data = await studentStore.fetchOne(studentId.value);
     student.value = data;
 
-    // Populate form with existing data
-    Object.keys(form).forEach((key) => {
-      if (key in data && key !== "photo" && key !== "same_as_present") {
-        (form as any)[key] = data[key as keyof Student] || "";
-      }
-    });
+    // Map basic fields
+    form.name_bn = data.name_bn || "";
+    form.name_en = data.name_en || "";
+    form.date_of_birth = data.date_of_birth?.split("T")[0] || "";
+    form.birth_certificate_no = (data as any).birth_certificate_no || "";
+    form.gender = (data.gender as Gender) || "";
+    form.blood_group = (data as any).blood_group || "";
+    form.religion = (data as any).religion || "";
+    form.nationality = (data as any).nationality || "";
+    form.residential_type = (data.residential_type as ResidentialType) || "";
+
+    // Map parent/guardian fields
+    form.father_name = data.father_name || "";
+    form.father_phone = data.father_phone || "";
+    form.father_occupation = data.father_occupation || "";
+    form.mother_name = data.mother_name || "";
+    form.mother_phone = data.mother_phone || "";
+    form.mother_occupation = data.mother_occupation || "";
+    form.guardian_type = (data.guardian_type as GuardianType) || null;
+    form.guardian_name = data.guardian_name || "";
+    form.guardian_phone = data.guardian_phone || "";
+    form.guardian_relation = data.guardian_relation || "";
+
+    // Map enrollment data (from first active enrollment)
+    const enrollment = data.enrollments?.[0];
+    if (enrollment) {
+      form.academic_session_id = enrollment.academic_session_id || null;
+      form.session_grade_id = enrollment.session_grade_id || null;
+      form.section_id = enrollment.section_id ?? null;
+      form.roll_number = enrollment.roll_no || "";
+      form.admission_date = enrollment.enrollment_date?.split("T")[0] || "";
+    }
+    // Load session grades for the selected session
+    if (form.academic_session_id) {
+      await gradeStore.fetchList();
+    }
+    // Map present address
+    if (data.present_address) {
+      form.present_division_id = data.present_address.division_id || null;
+      form.present_district_id = data.present_address.district_id || null;
+      form.present_area_id = data.present_address.area_id || null;
+      form.present_address_details =
+        data.present_address.village_house_holding || "";
+    }
+
+    // Map permanent address
+    if (data.permanent_address) {
+      form.permanent_division_id = data.permanent_address.division_id || null;
+      form.permanent_district_id = data.permanent_address.district_id || null;
+      form.permanent_area_id = data.permanent_address.area_id || null;
+      form.permanent_address_details =
+        data.permanent_address.village_house_holding || "";
+    }
+
+    // Map previous school info
+    form.previous_institution = (data as any).previous_institution || "";
+    form.previous_class = (data as any).previous_class || "";
+    form.previous_result = (data as any).previous_result || "";
 
     // Load related data if needed
     if (form.academic_session_id) {
@@ -265,14 +311,14 @@ watch(
   () => form.present_division_id,
   () => {
     form.present_district_id = null;
-    form.present_upazila_id = null;
+    form.present_area_id = null;
   }
 );
 
 watch(
   () => form.present_district_id,
   () => {
-    form.present_upazila_id = null;
+    form.present_area_id = null;
   }
 );
 
@@ -280,14 +326,14 @@ watch(
   () => form.permanent_division_id,
   () => {
     form.permanent_district_id = null;
-    form.permanent_upazila_id = null;
+    form.permanent_area_id = null;
   }
 );
 
 watch(
   () => form.permanent_district_id,
   () => {
-    form.permanent_upazila_id = null;
+    form.permanent_area_id = null;
   }
 );
 
@@ -297,7 +343,7 @@ watch(
     if (val) {
       form.permanent_division_id = form.present_division_id;
       form.permanent_district_id = form.present_district_id;
-      form.permanent_upazila_id = form.present_upazila_id;
+      form.permanent_area_id = form.present_area_id;
       form.permanent_address_details = form.present_address_details;
     }
   }
@@ -341,12 +387,12 @@ function validate(): boolean {
     errors.academic_session_id = "Session is required";
   if (!form.session_grade_id) errors.session_grade_id = "Grade is required";
   if (!form.section_id) errors.section_id = "Section is required";
-  if (!form.father_name_bn?.trim())
-    errors.father_name_bn = "Father's name is required";
+  if (!form.father_name?.trim())
+    errors.father_name = "Father's name is required";
   if (!form.father_phone?.trim())
     errors.father_phone = "Father's phone is required";
-  if (!form.mother_name_bn?.trim())
-    errors.mother_name_bn = "Mother's name is required";
+  if (!form.mother_name?.trim())
+    errors.mother_name = "Mother's name is required";
 
   return Object.keys(errors).length === 0;
 }
@@ -492,7 +538,7 @@ async function handleSubmit() {
 
             <USelect
               v-model="form.gender"
-              :options="genderItems"
+              :items="genderItems"
               label="Gender *"
               :error="errors.gender"
             />
@@ -517,7 +563,7 @@ async function handleSubmit() {
 
             <USelect
               v-model="form.residential_type"
-              :options="residentialItems"
+              :items="residentialItems"
               label="Residential Type *"
               :error="errors.residential_type"
             />
@@ -533,14 +579,14 @@ async function handleSubmit() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <USelect
               v-model="form.academic_session_id"
-              :options="sessionItems"
+              :items="sessionItems"
               label="Academic Session *"
               :error="errors.academic_session_id"
             />
 
             <USelect
               v-model="form.session_grade_id"
-              :options="gradeItems"
+              :items="gradeItems"
               label="Grade *"
               :disabled="!form.academic_session_id"
               :error="errors.session_grade_id"
@@ -548,7 +594,7 @@ async function handleSubmit() {
 
             <USelect
               v-model="form.section_id"
-              :options="sectionItems"
+              :items="sectionItems"
               label="Section *"
               :disabled="!form.session_grade_id"
               :error="errors.section_id"
@@ -576,22 +622,10 @@ async function handleSubmit() {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UInput
-              v-model="form.father_name_bn"
-              label="Father's Name (Bengali) *"
-              placeholder="পিতার নাম (বাংলায়)"
-              :error="errors.father_name_bn"
-            />
-
-            <UInput
-              v-model="form.father_name_en"
-              label="Father's Name (English)"
-              placeholder="Father's name in English"
-            />
-
-            <UInput
-              v-model="form.father_nid"
-              label="Father's NID"
-              placeholder="Enter NID number"
+              v-model="form.father_name"
+              label="Father's Name *"
+              placeholder="পিতার নাম"
+              :error="errors.father_name"
             />
 
             <UInput
@@ -605,7 +639,6 @@ async function handleSubmit() {
               v-model="form.father_occupation"
               label="Father's Occupation"
               placeholder="Enter occupation"
-              class="sm:col-span-2"
             />
           </div>
         </UCard>
@@ -618,22 +651,10 @@ async function handleSubmit() {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UInput
-              v-model="form.mother_name_bn"
-              label="Mother's Name (Bengali) *"
-              placeholder="মাতার নাম (বাংলায়)"
-              :error="errors.mother_name_bn"
-            />
-
-            <UInput
-              v-model="form.mother_name_en"
-              label="Mother's Name (English)"
-              placeholder="Mother's name in English"
-            />
-
-            <UInput
-              v-model="form.mother_nid"
-              label="Mother's NID"
-              placeholder="Enter NID number"
+              v-model="form.mother_name"
+              label="Mother's Name *"
+              placeholder="মাতার নাম"
+              :error="errors.mother_name"
             />
 
             <UInput
@@ -646,7 +667,6 @@ async function handleSubmit() {
               v-model="form.mother_occupation"
               label="Mother's Occupation"
               placeholder="Enter occupation"
-              class="sm:col-span-2"
             />
           </div>
         </UCard>
@@ -662,20 +682,14 @@ async function handleSubmit() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <USelect
               v-model="form.guardian_type"
-              :options="guardianTypeItems"
+              :items="guardianTypeItems"
               label="Guardian Type"
             />
 
             <UInput
-              v-model="form.guardian_name_bn"
-              label="Guardian Name (Bengali)"
-              placeholder="অভিভাবকের নাম (বাংলায়)"
-            />
-
-            <UInput
-              v-model="form.guardian_name_en"
-              label="Guardian Name (English)"
-              placeholder="Guardian name in English"
+              v-model="form.guardian_name"
+              label="Guardian Name"
+              placeholder="অভিভাবকের নাম"
             />
 
             <UInput
@@ -689,12 +703,6 @@ async function handleSubmit() {
               label="Relation with Student"
               placeholder="e.g., Uncle, Brother"
             />
-
-            <UInput
-              v-model="form.guardian_nid"
-              label="Guardian NID"
-              placeholder="Enter NID number"
-            />
           </div>
         </UCard>
 
@@ -707,21 +715,21 @@ async function handleSubmit() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <USelect
               v-model="form.present_division_id"
-              :options="divisionItems"
+              :items="divisionItems"
               label="Division"
             />
 
             <USelect
               v-model="form.present_district_id"
-              :options="presentDistrictItems"
+              :items="presentDistrictItems"
               label="District"
               :disabled="!form.present_division_id"
             />
 
             <USelect
-              v-model="form.present_upazila_id"
-              :options="presentUpazilaItems"
-              label="Upazila"
+              v-model="form.present_area_id"
+              :items="presentAreaItems"
+              label="Area"
               :disabled="!form.present_district_id"
             />
 
@@ -749,22 +757,22 @@ async function handleSubmit() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <USelect
               v-model="form.permanent_division_id"
-              :options="divisionItems"
+              :items="divisionItems"
               label="Division"
               :disabled="form.same_as_present"
             />
 
             <USelect
               v-model="form.permanent_district_id"
-              :options="permanentDistrictItems"
+              :items="permanentDistrictItems"
               label="District"
               :disabled="form.same_as_present || !form.permanent_division_id"
             />
 
             <USelect
-              v-model="form.permanent_upazila_id"
-              :options="permanentUpazilaItems"
-              label="Upazila"
+              v-model="form.permanent_area_id"
+              :items="permanentAreaItems"
+              label="Area"
               :disabled="form.same_as_present || !form.permanent_district_id"
             />
 
