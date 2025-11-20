@@ -635,6 +635,9 @@ async function exportStudents() {
         academic_session_id ||
         0
       "
+      :session-grade-id="
+        selectedStudentForFee.enrollments?.[0]?.session_grade_id || null
+      "
       @close="feeModalOpen = false"
       @saved="onFeesSaved"
     />

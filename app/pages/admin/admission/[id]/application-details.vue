@@ -577,7 +577,7 @@ function onFeesSaved() {
                 v-if="assignedFees.length > 0"
                 class="text-xs text-green-600 mt-1"
               >
-                ✓ {{ assignedFees.length }} fee(s) already assigned
+                {{ assignedFees.length }} fee(s) already assigned
               </div>
             </div>
             <UButton
@@ -703,6 +703,7 @@ function onFeesSaved() {
         :student-id="current.admitted_student.id"
         :student-name="current.applicant_name || 'Student'"
         :academic-session-id="current.academic_session_id"
+        :session-grade-id="current.session_grade_id || null"
         @close="feeModalOpen = false"
         @saved="onFeesSaved"
       />

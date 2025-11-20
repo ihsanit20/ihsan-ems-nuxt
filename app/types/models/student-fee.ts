@@ -1,47 +1,51 @@
+import type { SessionFee } from "./session-fee";
+
 export interface StudentFee {
   id: number;
   student_id: number;
   academic_session_id: number;
-  fee_id: number;
-  amount: number;
-  discount_type?: 'flat' | 'percent' | null;
+  session_fee_id: number;
+  amount?: number | null;
+  discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
   created_at?: string;
   updated_at?: string;
-  
-  // Relations
+
   student?: any;
   academic_session?: any;
-  fee?: any;
+  sessionFee?: SessionFee & {
+    grade?: { id: number; name: string } | null;
+  };
 }
 
 export interface CreateStudentFeeInput {
   student_id: number;
   academic_session_id: number;
-  fee_id: number;
-  amount: number;
-  discount_type?: 'flat' | 'percent' | null;
+  session_fee_id: number;
+  amount?: number | null;
+  discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
 }
 
 export interface UpdateStudentFeeInput {
-  amount?: number;
-  discount_type?: 'flat' | 'percent' | null;
+  session_fee_id?: number;
+  amount?: number | null;
+  discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
 }
 
 export interface BulkAssignStudentFeesInput {
   student_ids: number[];
   academic_session_id: number;
-  fee_id: number;
-  amount: number;
-  discount_type?: 'flat' | 'percent' | null;
+  session_fee_id: number;
+  amount?: number | null;
+  discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
 }
 
 export interface BulkUpdateStudentFeesInput {
   student_fee_ids: number[];
-  amount?: number;
-  discount_type?: 'flat' | 'percent' | null;
+  amount?: number | null;
+  discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
 }

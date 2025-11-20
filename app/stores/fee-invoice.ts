@@ -40,9 +40,12 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<Paginated<FeeInvoice>>("/fee-invoices", {
-          params: filters,
-        });
+        const response = await $api<Paginated<FeeInvoice>>(
+          "/api/v1/fee-invoices",
+          {
+            query: filters,
+          }
+        );
 
         this.feeInvoices = response.data;
         this.pagination = {
@@ -68,7 +71,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: FeeInvoice }>(
-          `/fee-invoices/${id}`
+          `/api/v1/fee-invoices/${id}`
         );
 
         this.currentFeeInvoice = response.data;
@@ -88,9 +91,9 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<Paginated<FeeInvoice>>(
-          `/students/${studentId}/invoices`,
+          `/api/v1/students/${studentId}/invoices`,
           {
-            params: filters,
+            query: filters,
           }
         );
 
@@ -117,10 +120,13 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: FeeInvoice }>("/fee-invoices", {
-          method: "POST",
-          body: input,
-        });
+        const response = await $api<{ data: FeeInvoice }>(
+          "/api/v1/fee-invoices",
+          {
+            method: "POST",
+            body: input,
+          }
+        );
 
         this.feeInvoices.unshift(response.data);
         return response.data;
@@ -139,7 +145,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: FeeInvoice }>(
-          `/fee-invoices/${id}`,
+          `/api/v1/fee-invoices/${id}`,
           {
             method: "PUT",
             body: input,
@@ -170,7 +176,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
       try {
         const { $api } = useNuxtApp();
-        await $api(`/fee-invoices/${id}`, {
+        await $api(`/api/v1/fee-invoices/${id}`, {
           method: "DELETE",
         });
 

@@ -101,6 +101,32 @@ const currentSessionId = computed(() => {
   return null;
 });
 
+function feeBaseAmount(fee: any): number {
+  if (!fee) return 0;
+  if (fee.amount !== null && fee.amount !== undefined) {
+    const amount = Number(fee.amount);
+    return Number.isFinite(amount) ? amount : 0;
+  }
+  const sessionFeeAmount = fee.sessionFee?.amount;
+  if (sessionFeeAmount === null || sessionFeeAmount === undefined) return 0;
+  const amount =
+    typeof sessionFeeAmount === "string"
+      ? Number(sessionFeeAmount)
+      : sessionFeeAmount;
+  return Number.isFinite(amount) ? Number(amount) : 0;
+}
+
+function feePayableAmount(fee: any): number {
+  const amount = feeBaseAmount(fee);
+  if (fee.discount_type && fee.discount_value) {
+    if (fee.discount_type === "flat") {
+      return Math.max(0, amount - fee.discount_value);
+    }
+    return Math.max(0, amount - (amount * fee.discount_value) / 100);
+  }
+  return amount;
+}
+
 /* ---------------- Helpers ---------------- */
 function statusColor(
   s?: string | null
@@ -573,14 +599,22 @@ async function createUserAccount() {
               class="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700"
             >
               <div class="flex-1">
-                <div class="font-medium">{{ fee.fee?.name || "Fee" }}</div>
+                <div class="font-medium">
+                  {{ fee.sessionFee?.fee?.name || "Fee" }}
+                  <span
+                    v-if="fee.sessionFee?.grade?.name"
+                    class="text-xs text-gray-500 ml-2"
+                  >
+                    ({{ fee.sessionFee.grade.name }})
+                  </span>
+                </div>
                 <div class="text-sm text-gray-500">
-                  Amount: ৳{{ fee.amount }}
+                  Amount: Tk {{ feeBaseAmount(fee).toFixed(0) }}
                   <span v-if="fee.discount_value" class="text-green-600 ml-2">
                     ({{
                       fee.discount_type === "percent"
                         ? fee.discount_value + "%"
-                        : "৳" + fee.discount_value
+                        : "Tk " + fee.discount_value
                     }}
                     discount)
                   </span>
@@ -590,17 +624,7 @@ async function createUserAccount() {
                 <div class="text-right">
                   <div class="text-sm text-gray-500">Payable</div>
                   <div class="font-semibold text-primary-600">
-                    ৳{{
-                      fee.discount_type && fee.discount_value
-                        ? fee.discount_type === "flat"
-                          ? Math.max(0, fee.amount - fee.discount_value)
-                          : Math.max(
-                              0,
-                              fee.amount -
-                                (fee.amount * fee.discount_value) / 100
-                            )
-                        : fee.amount
-                    }}
+                    Tk {{ feePayableAmount(fee).toFixed(0) }}
                   </div>
                 </div>
                 <UButton
@@ -622,27 +646,10 @@ async function createUserAccount() {
                 <span
                   class="text-xl font-bold text-primary-600 dark:text-primary-400"
                 >
-                  ৳{{
+                  Tk
+                  {{
                     studentFees
-                      .reduce((sum, fee) => {
-                        const amount = fee.amount || 0;
-                        if (fee.discount_type && fee.discount_value) {
-                          if (fee.discount_type === "flat") {
-                            return (
-                              sum + Math.max(0, amount - fee.discount_value)
-                            );
-                          } else {
-                            return (
-                              sum +
-                              Math.max(
-                                0,
-                                amount - (amount * fee.discount_value) / 100
-                              )
-                            );
-                          }
-                        }
-                        return sum + amount;
-                      }, 0)
+                      .reduce((sum, fee) => sum + feePayableAmount(fee), 0)
                       .toFixed(0)
                   }}
                 </span>
@@ -834,12 +841,13 @@ async function createUserAccount() {
     </UModal>
 
     <!-- Fee Assignment Modal -->
-    <StudentFeeAssignmentModal
+      <StudentFeeAssignmentModal
       v-if="student && currentSessionId"
       :open="feeModalOpen"
       :student-id="student.id"
       :student-name="student.name_bn || student.name_en || 'Student'"
       :academic-session-id="currentSessionId"
+      :session-grade-id="currentEnrollments?.[0]?.session_grade_id || null"
       @close="feeModalOpen = false"
       @saved="onFeesSaved"
     />
