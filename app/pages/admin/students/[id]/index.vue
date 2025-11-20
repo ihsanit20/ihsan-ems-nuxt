@@ -12,6 +12,7 @@ import { useHead, useToast } from "#imports";
 import { useRouter, useRoute } from "vue-router";
 import { useStudentStore } from "~/stores/student";
 import { useAddressStore } from "~/stores/address";
+import { useStudentFeeStore } from "~/stores/student-fee";
 import type { Student, StudentEnrollment } from "~/types";
 
 const route = useRoute();
@@ -19,6 +20,7 @@ const router = useRouter();
 const toast = useToast();
 const studentStore = useStudentStore();
 const addressStore = useAddressStore();
+const studentFeeStore = useStudentFeeStore();
 
 const {
   current: student,
@@ -27,6 +29,11 @@ const {
 } = storeToRefs(studentStore);
 
 const studentId = computed(() => Number(route.params.id));
+
+// Fee Assignment
+const feeModalOpen = ref(false);
+const studentFees = ref<any[]>([]);
+const loadingFees = ref(false);
 
 useHead({
   title: computed(() => student.value?.name_bn || "Student Details"),
@@ -37,6 +44,7 @@ onMounted(async () => {
   try {
     await studentStore.fetchOne(studentId.value, true);
     await addressStore.fetchDivisions();
+    await loadStudentFees();
   } catch (e: any) {
     toast.add({
       title: "Failed to load student",
@@ -45,6 +53,52 @@ onMounted(async () => {
     });
     router.push("/admin/students");
   }
+});
+
+/* ---------------- Fee Management ---------------- */
+async function loadStudentFees() {
+  if (!studentId.value) return;
+  loadingFees.value = true;
+  try {
+    await studentFeeStore.fetchStudentFees();
+    studentFees.value = studentFeeStore.getStudentFeesByStudent(
+      studentId.value
+    );
+  } catch (e: any) {
+    console.error("Failed to load fees:", e);
+  } finally {
+    loadingFees.value = false;
+  }
+}
+
+function onFeesSaved() {
+  loadStudentFees();
+}
+
+async function deleteFee(feeId: number) {
+  try {
+    await studentFeeStore.deleteStudentFee(feeId);
+    toast.add({
+      title: "Fee removed",
+      color: "success",
+    });
+    await loadStudentFees();
+  } catch (e: any) {
+    toast.add({
+      title: "Failed to remove fee",
+      description: e?.data?.message || e.message,
+      color: "error",
+    });
+  }
+}
+
+const currentSessionId = computed(() => {
+  // Get the student's current enrollment's academic session
+  if (currentEnrollments.value && currentEnrollments.value.length > 0) {
+    const firstEnrollment = currentEnrollments.value[0];
+    return firstEnrollment?.academic_session_id || null;
+  }
+  return null;
 });
 
 /* ---------------- Helpers ---------------- */
@@ -472,6 +526,131 @@ async function createUserAccount() {
           </div>
         </UCard>
 
+        <!-- Student Fees -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold">Assigned Fees</h3>
+              <UButton
+                v-if="currentSessionId"
+                icon="i-heroicons-plus"
+                size="sm"
+                @click="feeModalOpen = true"
+              >
+                Assign Fees
+              </UButton>
+            </div>
+          </template>
+
+          <div v-if="loadingFees" class="text-center py-8 text-gray-500">
+            <UIcon
+              name="i-heroicons-arrow-path"
+              class="h-6 w-6 animate-spin inline-block"
+            />
+            Loading fees...
+          </div>
+
+          <div v-else-if="studentFees.length === 0" class="text-center py-8">
+            <UIcon
+              name="i-heroicons-currency-dollar"
+              class="h-12 w-12 mx-auto text-gray-400 mb-3"
+            />
+            <p class="text-gray-500">No fees assigned yet</p>
+            <UButton
+              v-if="currentSessionId"
+              class="mt-4"
+              variant="outline"
+              @click="feeModalOpen = true"
+            >
+              Assign Fees
+            </UButton>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="fee in studentFees"
+              :key="fee.id"
+              class="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700"
+            >
+              <div class="flex-1">
+                <div class="font-medium">{{ fee.fee?.name || "Fee" }}</div>
+                <div class="text-sm text-gray-500">
+                  Amount: ৳{{ fee.amount }}
+                  <span v-if="fee.discount_value" class="text-green-600 ml-2">
+                    ({{
+                      fee.discount_type === "percent"
+                        ? fee.discount_value + "%"
+                        : "৳" + fee.discount_value
+                    }}
+                    discount)
+                  </span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-right">
+                  <div class="text-sm text-gray-500">Payable</div>
+                  <div class="font-semibold text-primary-600">
+                    ৳{{
+                      fee.discount_type && fee.discount_value
+                        ? fee.discount_type === "flat"
+                          ? Math.max(0, fee.amount - fee.discount_value)
+                          : Math.max(
+                              0,
+                              fee.amount -
+                                (fee.amount * fee.discount_value) / 100
+                            )
+                        : fee.amount
+                    }}
+                  </div>
+                </div>
+                <UButton
+                  icon="i-heroicons-trash"
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  @click="deleteFee(fee.id)"
+                />
+              </div>
+            </div>
+
+            <!-- Total Summary -->
+            <div class="border-t pt-3 mt-4 dark:border-gray-700">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold text-gray-700 dark:text-gray-300">
+                  Total Payable:
+                </span>
+                <span
+                  class="text-xl font-bold text-primary-600 dark:text-primary-400"
+                >
+                  ৳{{
+                    studentFees
+                      .reduce((sum, fee) => {
+                        const amount = fee.amount || 0;
+                        if (fee.discount_type && fee.discount_value) {
+                          if (fee.discount_type === "flat") {
+                            return (
+                              sum + Math.max(0, amount - fee.discount_value)
+                            );
+                          } else {
+                            return (
+                              sum +
+                              Math.max(
+                                0,
+                                amount - (amount * fee.discount_value) / 100
+                              )
+                            );
+                          }
+                        }
+                        return sum + amount;
+                      }, 0)
+                      .toFixed(0)
+                  }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
         <!-- Enrollment History -->
         <UCard>
           <template #header>
@@ -653,5 +832,16 @@ async function createUserAccount() {
         </template>
       </UCard>
     </UModal>
+
+    <!-- Fee Assignment Modal -->
+    <StudentFeeAssignmentModal
+      v-if="student && currentSessionId"
+      :open="feeModalOpen"
+      :student-id="student.id"
+      :student-name="student.name_bn || student.name_en || 'Student'"
+      :academic-session-id="currentSessionId"
+      @close="feeModalOpen = false"
+      @saved="onFeesSaved"
+    />
   </div>
 </template>

@@ -201,6 +201,19 @@ function residentialLabel(r?: ResidentialType | null): string {
 }
 
 /* ---------------- Row Actions ---------------- */
+const feeModalOpen = ref(false);
+const selectedStudentForFee = ref<Student | null>(null);
+
+function assignFees(row: Student) {
+  selectedStudentForFee.value = row;
+  feeModalOpen.value = true;
+}
+
+function onFeesSaved() {
+  feeModalOpen.value = false;
+  selectedStudentForFee.value = null;
+}
+
 function viewStudent(row: Student) {
   router.push(`/admin/students/${row.id}`);
 }
@@ -382,6 +395,12 @@ const columns: TableColumn<Student>[] = [
           onSelect: () => editStudent(s),
         },
         {
+          label: "Assign Fees",
+          icon: "i-heroicons-currency-bangladeshi",
+          onSelect: () => assignFees(s),
+        },
+        { type: "separator" as const },
+        {
           label: "Delete",
           icon: "i-lucide-trash-2",
           color: "error" as const,
@@ -471,9 +490,6 @@ async function exportStudents() {
           @click="bulkPromote"
         >
           Promote ({{ selectedRows.length }})
-        </UButton>
-        <UButton icon="i-heroicons-plus" to="/admin/students/create">
-          Add Student
         </UButton>
       </div>
     </div>
@@ -603,6 +619,25 @@ async function exportStudents() {
         />
       </template>
     </UModal>
+
+    <!-- Fee Assignment Modal -->
+    <StudentFeeAssignmentModal
+      v-if="selectedStudentForFee"
+      :open="feeModalOpen"
+      :student-id="selectedStudentForFee.id"
+      :student-name="
+        selectedStudentForFee.name_bn ||
+        selectedStudentForFee.name_en ||
+        'Student'
+      "
+      :academic-session-id="
+        selectedStudentForFee.enrollments?.[0]?.academic_session_id ||
+        academic_session_id ||
+        0
+      "
+      @close="feeModalOpen = false"
+      @saved="onFeesSaved"
+    />
   </div>
 </template>
 <style scoped>

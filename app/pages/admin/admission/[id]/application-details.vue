@@ -33,6 +33,11 @@ const admitForm = reactive({
 
 const statusOpen = ref(false);
 
+// Fee Assignment Modal
+const feeModalOpen = ref(false);
+const studentFeeStore = useStudentFeeStore();
+const assignedFees = ref<any[]>([]);
+
 function statusColor(status?: string) {
   switch (status) {
     case "pending":
@@ -87,6 +92,10 @@ onMounted(async () => {
     if (apps.current) {
       if (apps.current.session_grade_id) {
         await sections.fetchListBySession(apps.current.session_grade_id);
+      }
+      // Load fees if student is already admitted
+      if (apps.current.status === "admitted" && apps.current.student_id) {
+        loadStudentFees();
       }
     }
     statusForm.status = (apps.current?.status as any) || "pending";
@@ -146,6 +155,13 @@ async function submitAdmit() {
     });
     admitOpen.value = false;
     await apps.fetchOne(id.value);
+
+    // Auto-open fee assignment modal after admission
+    if (apps.current?.student_id && apps.current?.academic_session_id) {
+      setTimeout(() => {
+        feeModalOpen.value = true;
+      }, 500);
+    }
   } catch (e: any) {
     toast.add({
       title: "Failed",
@@ -153,6 +169,25 @@ async function submitAdmit() {
       color: "error",
     });
   }
+}
+
+// Load assigned fees for admitted student
+async function loadStudentFees() {
+  if (!apps.current?.student_id) return;
+  try {
+    await studentFeeStore.fetchStudentFees({
+      // You can add filter by student_id if your API supports it
+    });
+    assignedFees.value = studentFeeStore.studentFees.filter(
+      (f) => f.student_id === apps.current?.student_id
+    );
+  } catch (e: any) {
+    console.error("Failed to load fees:", e);
+  }
+}
+
+function onFeesSaved() {
+  loadStudentFees();
 }
 </script>
 
@@ -522,6 +557,35 @@ async function submitAdmit() {
             >
           </div>
         </UCard>
+
+        <!-- Assign Fees (Only for admitted students) -->
+        <UCard
+          v-if="current?.status === 'admitted' && current?.student_id"
+          class="mb-10"
+        >
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <div class="text-sm text-gray-500">Student Fees</div>
+              <div class="text-sm text-gray-500">
+                Assign fees to this student for the academic session.
+              </div>
+              <div
+                v-if="assignedFees.length > 0"
+                class="text-xs text-green-600 mt-1"
+              >
+                ✓ {{ assignedFees.length }} fee(s) already assigned
+              </div>
+            </div>
+            <UButton
+              color="secondary"
+              icon="i-heroicons-currency-bangladeshi"
+              @click="feeModalOpen = true"
+              >{{
+                assignedFees.length > 0 ? "Manage Fees" : "Assign Fees"
+              }}</UButton
+            >
+          </div>
+        </UCard>
       </div>
 
       <UModal
@@ -636,6 +700,19 @@ async function submitAdmit() {
           >
         </template>
       </UModal>
+
+      <!-- Fee Assignment Modal -->
+      <AdmissionFeeAssignmentModal
+        v-if="current?.student_id && current?.academic_session_id"
+        :open="feeModalOpen"
+        :student-id="current.student_id"
+        :student-name="
+          current.student_name_bn || current.student_name_en || 'Student'
+        "
+        :academic-session-id="current.academic_session_id"
+        @close="feeModalOpen = false"
+        @saved="onFeesSaved"
+      />
     </template>
   </UContainer>
 </template>
