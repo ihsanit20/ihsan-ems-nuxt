@@ -189,12 +189,11 @@ const residentialTypeItems = computed(() => {
   ];
 });
 
-/* ------------ Guardian auto-fill (public mode) ------------ */
+/* ------------ Guardian auto-fill (both modes) ------------ */
 
 watch(
   () => state.guardian_type,
   (t) => {
-    if (mode.value !== "public") return;
     if (t === "father") {
       state.guardian_name = state.father_name;
       state.guardian_phone = state.father_phone;
@@ -210,7 +209,6 @@ watch(
 watch(
   () => [state.father_name, state.father_phone],
   () => {
-    if (mode.value !== "public") return;
     if (state.guardian_type === "father") {
       state.guardian_name = state.father_name;
       state.guardian_phone = state.father_phone;
@@ -221,7 +219,6 @@ watch(
 watch(
   () => [state.mother_name, state.mother_phone],
   () => {
-    if (mode.value !== "public") return;
     if (state.guardian_type === "mother") {
       state.guardian_name = state.mother_name;
       state.guardian_phone = state.mother_phone;
@@ -340,8 +337,19 @@ function doSubmit() {
     return;
   }
 
+  // Extract academic_session_id from session_grade_id in admin mode
+  let academicSessionId = state.academic_session_id;
+  if (mode.value === "admin" && state.session_grade_id) {
+    const selectedSessionGrade = meta.value?.session_grades?.find(
+      (sg: any) => sg.id === state.session_grade_id
+    );
+    if (selectedSessionGrade) {
+      academicSessionId = selectedSessionGrade.academic_session_id;
+    }
+  }
+
   const payload = {
-    academic_session_id: state.academic_session_id,
+    academic_session_id: academicSessionId,
     session_grade_id: state.session_grade_id,
     applicant_name: state.applicant_name.trim(),
     gender: state.gender || null,
@@ -357,7 +365,7 @@ function doSubmit() {
     mother_phone: state.mother_phone.trim() || null,
     mother_occupation: state.mother_occupation.trim() || null,
 
-    guardian_type: mode.value === "public" ? state.guardian_type : undefined,
+    guardian_type: state.guardian_type,
     guardian_name: state.guardian_name.trim() || null,
     guardian_phone: state.guardian_phone.trim() || null,
     guardian_relation: state.guardian_relation.trim() || null,
@@ -569,16 +577,18 @@ function doSubmit() {
         </div>
 
         <div class="space-y-4">
-          <template v-if="mode === 'public'">
-            <UFormField label="Guardian Type" required name="guardian_type">
-              <USelect
-                v-model="state.guardian_type"
-                class="w-full"
-                :items="guardianTypeItems"
-                :disabled="saving"
-              />
-            </UFormField>
-          </template>
+          <UFormField
+            label="Guardian Type"
+            :required="mode === 'public'"
+            name="guardian_type"
+          >
+            <USelect
+              v-model="state.guardian_type"
+              class="w-full"
+              :items="guardianTypeItems"
+              :disabled="saving"
+            />
+          </UFormField>
 
           <UFormField label="Guardian Name" name="guardian_name">
             <UInput
@@ -587,9 +597,8 @@ function doSubmit() {
               placeholder="Name"
               :disabled="
                 saving ||
-                (mode === 'public' &&
-                  (state.guardian_type === 'father' ||
-                    state.guardian_type === 'mother'))
+                state.guardian_type === 'father' ||
+                state.guardian_type === 'mother'
               "
             />
           </UFormField>
@@ -602,9 +611,8 @@ function doSubmit() {
                 placeholder="01XXXXXXXXX"
                 :disabled="
                   saving ||
-                  (mode === 'public' &&
-                    (state.guardian_type === 'father' ||
-                      state.guardian_type === 'mother'))
+                  state.guardian_type === 'father' ||
+                  state.guardian_type === 'mother'
                 "
               />
             </UFormField>
@@ -615,9 +623,8 @@ function doSubmit() {
                 placeholder="Relation with student"
                 :disabled="
                   saving ||
-                  (mode === 'public' &&
-                    (state.guardian_type === 'father' ||
-                      state.guardian_type === 'mother'))
+                  state.guardian_type === 'father' ||
+                  state.guardian_type === 'mother'
                 "
               />
             </UFormField>

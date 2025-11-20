@@ -27,7 +27,6 @@ const statusForm = reactive({
 const admitOpen = ref(false);
 const admitForm = reactive({
   section_id: undefined as number | undefined,
-  roll_no: "",
   admission_date: new Date().toISOString().split("T")[0],
 });
 
@@ -94,7 +93,10 @@ onMounted(async () => {
         await sections.fetchListBySession(apps.current.session_grade_id);
       }
       // Load fees if student is already admitted
-      if (apps.current.status === "admitted" && apps.current.student_id) {
+      if (
+        apps.current.status === "admitted" &&
+        apps.current.admitted_student?.id
+      ) {
         loadStudentFees();
       }
     }
@@ -145,7 +147,6 @@ async function submitAdmit() {
   try {
     await apps.admit(id.value, {
       section_id: admitForm.section_id,
-      roll_no: admitForm.roll_no || undefined,
       admission_date: admitForm.admission_date || undefined,
     });
     toast.add({
@@ -157,7 +158,10 @@ async function submitAdmit() {
     await apps.fetchOne(id.value);
 
     // Auto-open fee assignment modal after admission
-    if (apps.current?.student_id && apps.current?.academic_session_id) {
+    if (
+      apps.current?.admitted_student?.id &&
+      apps.current?.academic_session_id
+    ) {
       setTimeout(() => {
         feeModalOpen.value = true;
       }, 500);
@@ -173,13 +177,13 @@ async function submitAdmit() {
 
 // Load assigned fees for admitted student
 async function loadStudentFees() {
-  if (!apps.current?.student_id) return;
+  if (!apps.current?.admitted_student?.id) return;
   try {
     await studentFeeStore.fetchStudentFees({
       // You can add filter by student_id if your API supports it
     });
     assignedFees.value = studentFeeStore.studentFees.filter(
-      (f) => f.student_id === apps.current?.student_id
+      (f) => f.student_id === apps.current?.admitted_student?.id
     );
   } catch (e: any) {
     console.error("Failed to load fees:", e);
@@ -560,7 +564,7 @@ function onFeesSaved() {
 
         <!-- Assign Fees (Only for admitted students) -->
         <UCard
-          v-if="current?.status === 'admitted' && current?.student_id"
+          v-if="current?.status === 'admitted' && current?.admitted_student?.id"
           class="mb-10"
         >
           <div class="flex items-center justify-between">
@@ -655,32 +659,21 @@ function onFeesSaved() {
               color="warning"
               variant="soft"
             />
-            <UFormField label="Section">
-              <USelect
+            <UFormField label="Select Section" required>
+              <URadioGroup
                 v-model="admitForm.section_id"
                 :items="sectionOptions"
-                :disabled="!current?.session_grade_id"
-                placeholder="Select section"
-                clearable
-                class="w-full"
+                :disabled="!current?.session_grade_id || saving"
               />
             </UFormField>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="Roll No">
-                <UInput
-                  v-model="admitForm.roll_no"
-                  placeholder="Optional"
-                  class="w-full"
-                />
-              </UFormField>
-              <UFormField label="Admission Date">
-                <UInput
-                  v-model="admitForm.admission_date"
-                  type="date"
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
+            <UFormField label="Admission Date">
+              <UInput
+                v-model="admitForm.admission_date"
+                type="date"
+                class="w-full"
+                :disabled="saving"
+              />
+            </UFormField>
           </div>
         </template>
         <template #footer>
@@ -694,7 +687,9 @@ function onFeesSaved() {
           <UButton
             color="primary"
             :loading="saving"
-            :disabled="saving || !current?.session_grade_id"
+            :disabled="
+              saving || !current?.session_grade_id || !admitForm.section_id
+            "
             @click="submitAdmit"
             >Admit</UButton
           >
@@ -703,12 +698,10 @@ function onFeesSaved() {
 
       <!-- Fee Assignment Modal -->
       <AdmissionFeeAssignmentModal
-        v-if="current?.student_id && current?.academic_session_id"
+        v-if="current?.admitted_student?.id && current?.academic_session_id"
         :open="feeModalOpen"
-        :student-id="current.student_id"
-        :student-name="
-          current.student_name_bn || current.student_name_en || 'Student'
-        "
+        :student-id="current.admitted_student.id"
+        :student-name="current.applicant_name || 'Student'"
         :academic-session-id="current.academic_session_id"
         @close="feeModalOpen = false"
         @saved="onFeesSaved"
