@@ -1,4 +1,5 @@
 import type { SessionFee } from "./session-fee";
+import type { StudentFee } from "./student-fee";
 
 export interface FeeInvoice {
   id: number;
@@ -24,7 +25,7 @@ export interface FeeInvoice {
 export interface FeeInvoiceItem {
   id: number;
   fee_invoice_id: number;
-  session_fee_id: number;
+  student_fee_id: number;
   description?: string | null;
   amount?: number;
   discount_amount?: number;
@@ -33,6 +34,7 @@ export interface FeeInvoiceItem {
   updated_at?: string;
   
   sessionFee?: SessionFee;
+  studentFee?: StudentFee;
 }
 
 export interface CreateFeeInvoiceInput {
@@ -44,7 +46,7 @@ export interface CreateFeeInvoiceInput {
 }
 
 export interface CreateFeeInvoiceItemInput {
-  session_fee_id: number;
+  student_fee_id: number;
   description?: string | null;
   amount?: number;
   discount_amount?: number;
@@ -59,7 +61,7 @@ export interface UpdateFeeInvoiceInput {
 
 export interface UpdateFeeInvoiceItemInput {
   id?: number;
-  session_fee_id: number;
+  student_fee_id: number;
   description?: string | null;
   amount?: number;
   discount_amount?: number;

@@ -74,17 +74,30 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
         // API may return either { data: invoice } or bare invoice object; handle both
         const invoice = (response as any)?.data ?? response;
 
-        // Normalize nested keys (backend returns session_fee, frontend expects sessionFee)
-        const toNumber = (v: any) => (v === null || v === undefined ? 0 : Number(v));
+        const toNumber = (v: any) =>
+          v === null || v === undefined ? 0 : Number(v);
 
-        // Normalize nested keys (backend returns session_fee, frontend expects sessionFee)
+        // Normalize nested keys (backend returns snake_case)
         if (invoice?.items?.length) {
           invoice.items = invoice.items.map((item: any) => ({
             ...item,
+            student_fee_id: Number(
+              item.student_fee_id ??
+                item.session_fee_id ??
+                item.studentFee?.id ??
+                item.student_fee?.id ??
+                0
+            ),
+            studentFee: item.studentFee ?? item.student_fee,
             amount: toNumber(item.amount),
             discount_amount: toNumber(item.discount_amount),
             net_amount: toNumber(item.net_amount),
-            sessionFee: item.sessionFee ?? item.session_fee ?? item.session_fee,
+            sessionFee:
+              item.sessionFee ??
+              item.session_fee ??
+              item.studentFee?.sessionFee ??
+              item.student_fee?.session_fee ??
+              item.student_fee?.sessionFee,
           }));
         }
 

@@ -32,7 +32,7 @@ const form = reactive({
   invoice_date: new Date().toISOString().split("T")[0],
   due_date: null as string | null,
   items: [] as Array<{
-    session_fee_id: number;
+    student_fee_id: number;
     fee_name: string;
     amount: number;
     discount_amount: number;
@@ -148,15 +148,15 @@ function selectStudent(student: any) {
 /* ---------------- Due Fees (student-specific) ---------------- */
 const availableDueFees = ref<StudentFee[]>([]);
 
-const getSessionFeeId = (fee: StudentFee) =>
-  fee.session_fee_id || fee.sessionFee?.id || null;
+const getStudentFeeId = (fee: StudentFee) =>
+  fee.id || (fee as any)?.student_fee_id || null;
 
 // Filter out already added fees
 const availableFeesToAdd = computed(() => {
   return availableDueFees.value.filter((dueFee) => {
-    const sessionFeeId = getSessionFeeId(dueFee);
-    if (!sessionFeeId) return false;
-    return !form.items.some((item) => item.session_fee_id === sessionFeeId);
+    const studentFeeId = getStudentFeeId(dueFee);
+    if (!studentFeeId) return false;
+    return !form.items.some((item) => item.student_fee_id === studentFeeId);
   });
 });
 
@@ -203,12 +203,12 @@ async function openAddFee() {
 }
 
 function addFeeToInvoice(dueFee: StudentFee) {
-  const sessionFeeId = getSessionFeeId(dueFee);
-  if (!sessionFeeId) {
+  const studentFeeId = getStudentFeeId(dueFee);
+  if (!studentFeeId) {
     toast.add({
       color: "error",
       title: "Missing fee reference",
-      description: "This fee is missing its session fee reference.",
+      description: "This fee is missing its student fee reference.",
     });
     return;
   }
@@ -216,7 +216,7 @@ function addFeeToInvoice(dueFee: StudentFee) {
   const amount = Number(dueFee.amount ?? dueFee.sessionFee?.amount ?? 0) || 0;
 
   const existingItem = form.items.find(
-    (item) => item.session_fee_id === sessionFeeId
+    (item) => item.student_fee_id === studentFeeId
   );
 
   if (existingItem) {
@@ -229,7 +229,7 @@ function addFeeToInvoice(dueFee: StudentFee) {
   }
 
   form.items.push({
-    session_fee_id: sessionFeeId,
+    student_fee_id: studentFeeId,
     fee_name: dueFee.fee_name || dueFee.sessionFee?.fee?.name || "Fee",
     amount,
     discount_amount: 0,
@@ -301,7 +301,7 @@ async function submitForm() {
       new Date().toISOString().split("T")[0]) as string,
     due_date: form.due_date || null,
     items: form.items.map((item) => ({
-      session_fee_id: item.session_fee_id,
+      student_fee_id: item.student_fee_id,
       description: item.description || null,
       amount: item.amount,
       discount_amount: item.discount_amount,
@@ -638,7 +638,7 @@ function goBack() {
         <div v-else class="space-y-2">
           <button
             v-for="dueFee in availableFeesToAdd"
-            :key="getSessionFeeId(dueFee) || dueFee.id"
+            :key="getStudentFeeId(dueFee) || dueFee.id"
             type="button"
             class="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             @click="addFeeToInvoice(dueFee)"
