@@ -8,9 +8,9 @@ definePageMeta({
 
 import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
-import type {
-  CreateFeeInvoiceInput,
-} from "~/types/models/fee-invoice";
+import { ref, reactive, computed, watch, nextTick } from "vue";
+import { storeToRefs } from "pinia";
+import type { CreateFeeInvoiceInput } from "~/types/models/fee-invoice";
 import type { StudentFee } from "~/types/models/student-fee";
 
 useHead({ title: "Create Invoice" });
@@ -49,6 +49,9 @@ const studentSearchResults = ref<any[]>([]);
 const studentSearchLoading = ref(false);
 const selectedStudent = ref<any>(null);
 
+// ✅ prevents watch-triggered re-search when we set query programmatically
+const suppressStudentWatch = ref(false);
+
 // Debounced student search
 let searchTimeout: ReturnType<typeof setTimeout>;
 const debouncedStudentSearch = async (query: string) => {
@@ -63,6 +66,7 @@ const debouncedStudentSearch = async (query: string) => {
     studentSearchLoading.value = true;
     try {
       await studentStore.fetchList();
+
       // Filter results locally
       studentSearchResults.value = studentStore.items
         .filter(
@@ -85,19 +89,55 @@ const debouncedStudentSearch = async (query: string) => {
 };
 
 watch(studentSearchQuery, (val) => {
+  if (suppressStudentWatch.value) return;
+
+  // ✅ if selected student text is already in input, don't re-search
+  if (
+    selectedStudent.value &&
+    val ===
+      (selectedStudent.value.name_bn ||
+        selectedStudent.value.name_en ||
+        selectedStudent.value.student_code)
+  ) {
+    return;
+  }
+
   debouncedStudentSearch(val);
 });
+
+function clearStudentSelection() {
+  selectedStudent.value = null;
+  form.student_id = null;
+  form.academic_session_id = null;
+  availableDueFees.value = [];
+  form.items = [];
+  studentSearchResults.value = [];
+
+  suppressStudentWatch.value = true;
+  studentSearchQuery.value = "";
+  nextTick(() => {
+    suppressStudentWatch.value = false;
+  });
+}
 
 function selectStudent(student: any) {
   selectedStudent.value = student;
   form.student_id = student.id;
   form.academic_session_id =
     student.enrollments?.[0]?.academic_session_id || null;
+
   availableDueFees.value = [];
   form.items = [];
+  studentSearchResults.value = [];
+
+  // ✅ suppress search watch while setting selected text
+  suppressStudentWatch.value = true;
   studentSearchQuery.value =
     student.name_bn || student.name_en || student.student_code;
-  studentSearchResults.value = [];
+
+  nextTick(() => {
+    suppressStudentWatch.value = false;
+  });
 
   // Load due fees after student selection
   if (form.academic_session_id) {
@@ -173,12 +213,8 @@ function addFeeToInvoice(dueFee: StudentFee) {
     return;
   }
 
-  const amount =
-    Number(
-      dueFee.amount ??
-        dueFee.sessionFee?.amount ??
-        0
-    ) || 0;
+  const amount = Number(dueFee.amount ?? dueFee.sessionFee?.amount ?? 0) || 0;
+
   const existingItem = form.items.find(
     (item) => item.session_fee_id === sessionFeeId
   );
@@ -194,11 +230,8 @@ function addFeeToInvoice(dueFee: StudentFee) {
 
   form.items.push({
     session_fee_id: sessionFeeId,
-    fee_name:
-      dueFee.fee_name ||
-      dueFee.sessionFee?.fee?.name ||
-      "Fee",
-    amount: amount,
+    fee_name: dueFee.fee_name || dueFee.sessionFee?.fee?.name || "Fee",
+    amount,
     discount_amount: 0,
     net_amount: amount,
     description: undefined,
@@ -332,6 +365,18 @@ function goBack() {
                   placeholder="Search student by name or code..."
                   class="w-full"
                   :loading="studentSearchLoading"
+                  @input="
+                    () => {
+                      // ✅ user starts typing → clear old selection + fees
+                      if (!suppressStudentWatch) {
+                        selectedStudent = null;
+                        form.student_id = null;
+                        form.academic_session_id = null;
+                        availableDueFees = [];
+                        form.items = [];
+                      }
+                    }
+                  "
                 />
 
                 <!-- Search Results Dropdown -->
@@ -374,14 +419,7 @@ function goBack() {
                     icon="i-lucide-x"
                     variant="ghost"
                     size="sm"
-                    @click="
-                      selectedStudent = null;
-                      form.student_id = null;
-                      form.academic_session_id = null;
-                      availableDueFees = [];
-                      form.items = [];
-                      studentSearchQuery = '';
-                    "
+                    @click="clearStudentSelection"
                   />
                 </div>
               </div>
@@ -608,11 +646,7 @@ function goBack() {
             <div class="flex justify-between items-start">
               <div>
                 <div class="font-medium">
-                  {{
-                    dueFee.fee_name ||
-                    dueFee.sessionFee?.fee?.name ||
-                    "Fee"
-                  }}
+                  {{ dueFee.fee_name || dueFee.sessionFee?.fee?.name || "Fee" }}
                 </div>
                 <div class="text-sm text-gray-500">
                   {{
@@ -626,9 +660,7 @@ function goBack() {
                 <div class="font-semibold">
                   ৳{{
                     Number(
-                      dueFee.amount ??
-                        dueFee.sessionFee?.amount ??
-                        0
+                      dueFee.amount ?? dueFee.sessionFee?.amount ?? 0
                     ).toFixed(2)
                   }}
                 </div>
