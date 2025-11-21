@@ -30,20 +30,31 @@ const selectedFees = ref<
     amount: number | null;
     discount_type: "flat" | "percent" | null;
     discount_value: number | null;
+    is_checked: boolean;
   }>
 >([]);
 
 const availableSessionFees = ref<SessionFee[]>([]);
 const loadingFees = ref(false);
 
+// Load fees when academicSessionId changes
+watchEffect(async () => {
+  if (props.academicSessionId && props.open) {
+    console.log("Loading fees for session:", props.academicSessionId);
+    await loadSessionFees();
+    initializeFees();
+  }
+});
+
 watch(
   () => props.open,
   async (isOpen) => {
-    if (isOpen) {
-      await loadSessionFees();
-      if (selectedFees.value.length === 0) {
-        addFeeRow();
-      }
+    console.log("Modal opened:", isOpen, {
+      academicSessionId: props.academicSessionId,
+    });
+    if (!isOpen) {
+      // Clear when modal closes
+      selectedFees.value = [];
     }
   }
 );
@@ -53,118 +64,80 @@ async function loadSessionFees() {
   try {
     if (!props.academicSessionId) {
       availableSessionFees.value = [];
+      loadingFees.value = false;
       return;
     }
-    await sessionFeeStore.fetchList({
+
+    // Fetch session fees with filters
+    const response = await sessionFeeStore.fetchList({
       academic_session_id: props.academicSessionId,
       grade_id: props.sessionGradeId ?? undefined,
       only_active: true,
       per_page: 100,
     });
+
+    // Assign fetched items to local ref
     availableSessionFees.value = sessionFeeStore.items;
+
+    if (availableSessionFees.value.length === 0) {
+      toast.add({
+        title: "No fees available",
+        description: "No active session fees found for this session/grade",
+        color: "info",
+      });
+    }
   } catch (error: any) {
+    console.error("Error loading session fees:", error);
     toast.add({
       title: "Failed to load fees",
-      description: error.message,
+      description: error?.data?.message || error.message || "Unknown error",
       color: "error",
     });
+    availableSessionFees.value = [];
   } finally {
     loadingFees.value = false;
   }
 }
 
-function addFeeRow() {
-  selectedFees.value.push({
-    session_fee_id: 0,
-    fee_name: "",
-    grade_name: "",
-    amount: null,
+function initializeFees() {
+  if (!availableSessionFees.value || availableSessionFees.value.length === 0) {
+    selectedFees.value = [];
+    return;
+  }
+
+  selectedFees.value = availableSessionFees.value.map((fee) => ({
+    session_fee_id: fee.id,
+    fee_name: fee.fee?.name || "Fee",
+    grade_name: fee.grade?.name || "",
+    amount:
+      fee.amount !== undefined && fee.amount !== null
+        ? Number(fee.amount)
+        : null,
     discount_type: null,
     discount_value: null,
-  });
+    is_checked: false,
+  }));
 }
 
 function removeFeeRow(index: number) {
   selectedFees.value.splice(index, 1);
 }
 
-function onFeeSelect(index: number, sessionFeeId: number) {
-  const fee = availableSessionFees.value.find((f) => f.id === sessionFeeId);
-  const selectedFee = selectedFees.value[index];
-  if (fee && selectedFee) {
-    selectedFee.session_fee_id = fee.id;
-    selectedFee.fee_name = fee.fee?.name || "Fee";
-    selectedFee.grade_name = fee.grade?.name || "";
-    selectedFee.amount =
-      fee.amount !== undefined && fee.amount !== null
-        ? Number(fee.amount)
-        : null;
-  }
-}
-
-function getSessionFeeAmount(sessionFeeId: number): number {
-  const fee = availableSessionFees.value.find((f) => f.id === sessionFeeId);
-  const amount = fee?.amount;
-  const asNumber = typeof amount === "string" ? Number(amount) : amount;
-  return asNumber ? Number(asNumber) : 0;
-}
-
-function getRowAmount(fee: {
-  session_fee_id: number;
-  amount: number | null;
-}): number {
-  if (fee.amount !== null && fee.amount !== undefined) {
-    return Number(fee.amount) || 0;
-  }
-  return getSessionFeeAmount(fee.session_fee_id);
-}
-
-function calculateNetAmount(
-  fee: {
-    session_fee_id: number;
-    amount: number | null;
-    discount_type: "flat" | "percent" | null;
-    discount_value: number | null;
-  }
-): number {
-  const amount = getRowAmount(fee);
-  if (!fee.discount_type || !fee.discount_value) return amount;
-
-  if (fee.discount_type === "flat") {
-    return Math.max(0, amount - fee.discount_value);
-  }
-
-  return Math.max(0, amount - (amount * fee.discount_value) / 100);
-}
-
 async function saveFees() {
-  if (selectedFees.value.length === 0) {
+  const checkedFees = selectedFees.value.filter((f) => f.is_checked);
+
+  if (checkedFees.length === 0) {
     toast.add({
       title: "No fees selected",
-      description: "Please add at least one fee",
+      description: "Please select at least one fee",
       color: "warning",
-    });
-    return;
-  }
-
-  const hasInvalidFee = selectedFees.value.some((f) => {
-    const amount = getRowAmount(f);
-    return !f.session_fee_id || amount <= 0;
-  });
-
-  if (hasInvalidFee) {
-    toast.add({
-      title: "Invalid fee data",
-      description:
-        "Please select a session fee and ensure the amount is greater than zero.",
-      color: "error",
     });
     return;
   }
 
   loading.value = true;
   try {
-    for (const fee of selectedFees.value) {
+    for (const fee of checkedFees) {
       const input: CreateStudentFeeInput = {
         student_id: props.studentId,
         academic_session_id: props.academicSessionId,
@@ -178,7 +151,7 @@ async function saveFees() {
 
     toast.add({
       title: "Fees Assigned",
-      description: `${selectedFees.value.length} fee(s) assigned successfully`,
+      description: `${checkedFees.length} fee(s) assigned successfully`,
       color: "success",
     });
 
@@ -213,103 +186,128 @@ function closeModal() {
   >
     <template #body>
       <div class="space-y-4">
-        <div
-          v-for="(fee, index) in selectedFees"
-          :key="index"
-          class="grid grid-cols-12 gap-3 items-start p-4 border rounded-lg dark:border-gray-700"
-        >
-          <div class="col-span-12 sm:col-span-4">
-            <USelect
-              v-model="fee.session_fee_id"
-              :items="
-                availableSessionFees.map((f) => ({
-                  label: `${f.fee?.name || 'Fee'}${
-                    f.grade?.name ? ` (${f.grade.name})` : ''
-                  }`,
-                  value: f.id,
-                }))
-              "
-              placeholder="Select Session Fee"
-              :loading="loadingFees"
-              :popper="{ strategy: 'fixed' }"
-              @update:model-value="(val) => onFeeSelect(index, val as number)"
-            />
-          </div>
+        <!-- Debug Info (Remove in production) -->
+        <div class="text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded mb-2">
+          <p>Loading: {{ loadingFees }}</p>
+          <p>Available Fees: {{ availableSessionFees.length }}</p>
+          <p>Selected Fees: {{ selectedFees.length }}</p>
+          <p>Session ID: {{ props.academicSessionId }}</p>
+          <p>Grade ID: {{ props.sessionGradeId }}</p>
+        </div>
 
-          <div class="col-span-6 sm:col-span-2">
-            <UInput
-              v-model.number="fee.amount"
-              type="number"
-              placeholder="Amount"
-              min="0"
-              step="0.01"
-            />
-          </div>
+        <div v-if="loadingFees" class="text-center py-4">
+          <p class="text-gray-600 dark:text-gray-400">Loading fees...</p>
+        </div>
 
-          <div class="col-span-6 sm:col-span-2">
-            <USelect
-              v-model="fee.discount_type"
-              :items="[
-                { label: 'No Discount', value: null },
-                { label: 'Flat', value: 'flat' },
-                { label: 'Percent', value: 'percent' },
-              ]"
-              placeholder="Discount"
-              :popper="{ strategy: 'fixed' }"
-            />
-          </div>
+        <div v-else-if="selectedFees.length === 0" class="text-center py-4">
+          <p class="text-gray-600 dark:text-gray-400">No fees available</p>
+        </div>
 
-          <div class="col-span-6 sm:col-span-2">
-            <UInput
-              v-model.number="fee.discount_value"
-              type="number"
-              :placeholder="
-                fee.discount_type === 'percent' ? 'Percent' : 'Amount'
-              "
-              :disabled="!fee.discount_type"
-              min="0"
-              :step="fee.discount_type === 'percent' ? '1' : '0.01'"
-            />
-          </div>
-
+        <div v-else class="space-y-3">
           <div
-            class="col-span-5 sm:col-span-1 flex items-center justify-center"
+            v-for="(fee, index) in selectedFees"
+            :key="index"
+            class="border rounded-lg p-4 dark:border-gray-700"
+            :class="
+              fee.is_checked
+                ? 'bg-primary-50 dark:bg-primary-950'
+                : 'bg-gray-50 dark:bg-gray-800'
+            "
           >
-            <span
-              class="text-sm font-medium text-primary-600 dark:text-primary-400"
-            >
-              Tk {{ calculateNetAmount(fee).toFixed(0) }}
-            </span>
-          </div>
+            <!-- Checkbox Row -->
+            <div class="flex items-start gap-3">
+              <UCheckbox v-model="fee.is_checked" class="mt-1" />
 
-          <div class="col-span-1 sm:col-span-1 flex items-center justify-end">
-            <UButton
-              icon="i-heroicons-trash"
-              variant="ghost"
-              color="error"
-              size="sm"
-              @click="removeFeeRow(index)"
-              :disabled="selectedFees.length === 1"
-            />
+              <div class="flex-1">
+                <!-- Fee Name and Amount -->
+                <div class="mb-3">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ fee.fee_name }}
+                    <span
+                      v-if="fee.grade_name"
+                      class="text-sm font-normal text-gray-500 dark:text-gray-400"
+                    >
+                      ({{ fee.grade_name }})
+                    </span>
+                  </p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Amount: <span class="font-medium">Tk {{ fee.amount }}</span>
+                  </p>
+                </div>
+
+                <!-- Discount Section (Only visible when checked) -->
+                <div
+                  v-if="fee.is_checked"
+                  class="space-y-3 pt-3 border-t dark:border-gray-600"
+                >
+                  <div class="grid grid-cols-2 gap-2">
+                    <USelect
+                      v-model="fee.discount_type"
+                      :items="[
+                        { label: 'No Discount', value: null },
+                        { label: 'Flat', value: 'flat' },
+                        { label: 'Percent', value: 'percent' },
+                      ]"
+                      placeholder="Discount Type"
+                      :popper="{ strategy: 'fixed' }"
+                      size="sm"
+                    />
+
+                    <UInput
+                      v-model.number="fee.discount_value"
+                      type="number"
+                      :placeholder="
+                        fee.discount_type === 'percent'
+                          ? 'Percent %'
+                          : 'Amount Tk'
+                      "
+                      :disabled="!fee.discount_type"
+                      min="0"
+                      :step="fee.discount_type === 'percent' ? '1' : '0.01'"
+                      size="sm"
+                    />
+                  </div>
+
+                  <!-- Net Amount Display -->
+                  <div
+                    v-if="fee.discount_type && fee.discount_value"
+                    class="bg-white dark:bg-gray-700 p-2 rounded flex justify-between items-center"
+                  >
+                    <span class="text-sm text-gray-600 dark:text-gray-300">
+                      Net Amount:
+                    </span>
+                    <span
+                      class="font-semibold text-primary-600 dark:text-primary-400"
+                    >
+                      Tk
+                      {{
+                        (fee.discount_type === "flat"
+                          ? Math.max(0, fee.amount! - fee.discount_value)
+                          : Math.max(
+                              0,
+                              fee.amount! -
+                                (fee.amount! * fee.discount_value) / 100
+                            )
+                        ).toFixed(0)
+                      }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <UButton
-          icon="i-heroicons-plus"
-          variant="outline"
-          @click="addFeeRow"
-          block
-        >
-          Add Another Fee
-        </UButton>
-
+        <!-- Summary -->
         <div
-          v-if="selectedFees.length > 0"
-          class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2"
+          v-if="selectedFees.some((f) => f.is_checked)"
+          class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2 mt-4"
         >
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600 dark:text-gray-400">Total Fees:</span>
-            <span class="font-medium">{{ selectedFees.length }}</span>
+            <span class="text-gray-600 dark:text-gray-400">Selected Fees:</span>
+            <span class="font-medium">{{
+              selectedFees.filter((f) => f.is_checked).length
+            }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600 dark:text-gray-400">Total Amount:</span>
@@ -317,7 +315,8 @@ function closeModal() {
               Tk
               {{
                 selectedFees
-                  .reduce((sum, f) => sum + getRowAmount(f), 0)
+                  .filter((f) => f.is_checked)
+                  .reduce((sum, f) => sum + (f.amount || 0), 0)
                   .toFixed(0)
               }}
             </span>
@@ -334,7 +333,19 @@ function closeModal() {
               Tk
               {{
                 selectedFees
-                  .reduce((sum, f) => sum + calculateNetAmount(f), 0)
+                  .filter((f) => f.is_checked)
+                  .reduce((sum, f) => {
+                    const amount = f.amount || 0;
+                    if (!f.discount_type || !f.discount_value)
+                      return sum + amount;
+                    if (f.discount_type === "flat") {
+                      return sum + Math.max(0, amount - f.discount_value);
+                    }
+                    return (
+                      sum +
+                      Math.max(0, amount - (amount * f.discount_value) / 100)
+                    );
+                  }, 0)
                   .toFixed(0)
               }}
             </span>

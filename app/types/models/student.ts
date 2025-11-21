@@ -100,6 +100,7 @@ export type Student = {
   // Relations
   user?: User | null;
   enrollments?: StudentEnrollment[];
+  latest_enrollment?: StudentEnrollment | null;
 };
 
 /**

@@ -204,6 +204,19 @@ function residentialLabel(r?: ResidentialType | null): string {
 const feeModalOpen = ref(false);
 const selectedStudentForFee = ref<Student | null>(null);
 
+function getStudentSessionId(student: Student): number {
+  // Get from latest_enrollment (Backend provides this)
+  if (student.latest_enrollment?.academic_session_id) {
+    return student.latest_enrollment.academic_session_id;
+  }
+
+  // Fallback to current filter if any
+  if (academic_session_id.value) return academic_session_id.value;
+
+  // Last resort
+  return 0;
+}
+
 function assignFees(row: Student) {
   selectedStudentForFee.value = row;
   feeModalOpen.value = true;
@@ -630,13 +643,9 @@ async function exportStudents() {
         selectedStudentForFee.name_en ||
         'Student'
       "
-      :academic-session-id="
-        selectedStudentForFee.enrollments?.[0]?.academic_session_id ||
-        academic_session_id ||
-        0
-      "
+      :academic-session-id="getStudentSessionId(selectedStudentForFee)"
       :session-grade-id="
-        selectedStudentForFee.enrollments?.[0]?.session_grade_id || null
+        selectedStudentForFee.latest_enrollment?.session_grade_id || null
       "
       @close="feeModalOpen = false"
       @saved="onFeesSaved"

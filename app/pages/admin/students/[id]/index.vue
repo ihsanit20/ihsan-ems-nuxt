@@ -93,11 +93,16 @@ async function deleteFee(feeId: number) {
 }
 
 const currentSessionId = computed(() => {
-  // Get the student's current enrollment's academic session
-  if (currentEnrollments.value && currentEnrollments.value.length > 0) {
-    const firstEnrollment = currentEnrollments.value[0];
-    return firstEnrollment?.academic_session_id || null;
+  // Get from latest_enrollment (Backend provides this)
+  if (student.value?.latest_enrollment?.academic_session_id) {
+    return student.value.latest_enrollment.academic_session_id;
   }
+
+  // Fallback to currentEnrollments if available
+  if (currentEnrollments.value && currentEnrollments.value.length > 0) {
+    return currentEnrollments.value[0]?.academic_session_id || null;
+  }
+
   return null;
 });
 
@@ -841,7 +846,7 @@ async function createUserAccount() {
     </UModal>
 
     <!-- Fee Assignment Modal -->
-      <StudentFeeAssignmentModal
+    <StudentFeeAssignmentModal
       v-if="student && currentSessionId"
       :open="feeModalOpen"
       :student-id="student.id"
