@@ -716,18 +716,13 @@ async function createUserAccount() {
     </div>
 
     <!-- Photo Upload Modal -->
-    <UModal v-model="photoUploadOpen">
+    <UModal
+      :open="photoUploadOpen"
+      @update:open="(val) => (photoUploadOpen = val)"
+    >
       <UCard>
         <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Upload Photo</h3>
-            <UButton
-              icon="i-heroicons-x-mark"
-              variant="ghost"
-              color="secondary"
-              @click="photoUploadOpen = false"
-            />
-          </div>
+          <h3 class="text-lg font-semibold">Upload Photo</h3>
         </template>
 
         <div class="space-y-4">
@@ -757,18 +752,10 @@ async function createUserAccount() {
     </UModal>
 
     <!-- Issue TC Modal -->
-    <UModal v-model="issueTCOpen">
+    <UModal :open="issueTCOpen" @update:open="(val) => (issueTCOpen = val)">
       <UCard>
         <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Issue Transfer Certificate</h3>
-            <UButton
-              icon="i-heroicons-x-mark"
-              variant="ghost"
-              color="secondary"
-              @click="issueTCOpen = false"
-            />
-          </div>
+          <h3 class="text-lg font-semibold">Issue Transfer Certificate</h3>
         </template>
 
         <div class="space-y-4">
@@ -795,18 +782,13 @@ async function createUserAccount() {
     </UModal>
 
     <!-- Create Account Modal -->
-    <UModal v-model="createAccountOpen">
+    <UModal
+      :open="createAccountOpen"
+      @update:open="(val) => (createAccountOpen = val)"
+    >
       <UCard>
         <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Create User Account</h3>
-            <UButton
-              icon="i-heroicons-x-mark"
-              variant="ghost"
-              color="secondary"
-              @click="createAccountOpen = false"
-            />
-          </div>
+          <h3 class="text-lg font-semibold">Create User Account</h3>
         </template>
 
         <div class="space-y-4">
