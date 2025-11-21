@@ -51,7 +51,7 @@ const tiles = [
 </script>
 
 <template>
-  <UContainer>
+  <div>
     <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <div>
@@ -111,5 +111,5 @@ const tiles = [
       Tip: To open classes/sections by session, go to
       <strong>Academics → Sessions → (open a session) → Classes</strong>.
     </p>
-  </UContainer>
+  </div>
 </template>

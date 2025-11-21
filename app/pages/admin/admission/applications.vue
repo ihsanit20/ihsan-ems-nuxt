@@ -245,7 +245,7 @@ const columns: TableColumn<Row>[] = [
 </script>
 
 <template>
-  <UContainer>
+  <div>
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-semibold">Admission Applications</h1>
       <div class="flex gap-2">
@@ -410,5 +410,5 @@ const columns: TableColumn<Row>[] = [
         </div>
       </template>
     </UCard>
-  </UContainer>
+  </div>
 </template>
