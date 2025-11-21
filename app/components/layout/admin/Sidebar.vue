@@ -19,16 +19,16 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
   },
 
   {
-    label: "Admissions",
-    icon: "i-lucide-badge-plus",
-    to: "/admin/admission/applications",
+    label: "Students",
+    icon: "i-lucide-users",
+    to: "/admin/students",
     exact: true,
   },
 
   {
-    label: "Students",
-    icon: "i-lucide-users",
-    to: "/admin/students",
+    label: "Admissions",
+    icon: "i-lucide-badge-plus",
+    to: "/admin/admission/applications",
     exact: true,
   },
 

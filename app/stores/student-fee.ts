@@ -42,12 +42,9 @@ export const useStudentFeeStore = defineStore("studentFee", {
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<Paginated<StudentFee>>(
-          "/api/v1/student-fees",
-          {
-            query: filters,
-          }
-        );
+        const response = await $api<Paginated<StudentFee>>("/v1/student-fees", {
+          query: filters,
+        });
 
         this.studentFees = response.data;
         this.pagination = {
@@ -73,7 +70,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: StudentFee }>(
-          `/api/v1/student-fees/${id}`
+          `/v1/student-fees/${id}`
         );
 
         this.currentStudentFee = response.data;
@@ -92,13 +89,10 @@ export const useStudentFeeStore = defineStore("studentFee", {
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: StudentFee }>(
-          "/api/v1/student-fees",
-          {
-            method: "POST",
-            body: input,
-          }
-        );
+        const response = await $api<{ data: StudentFee }>("/v1/student-fees", {
+          method: "POST",
+          body: input,
+        });
 
         this.studentFees.unshift(response.data);
         return response.data;
@@ -117,7 +111,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: StudentFee }>(
-          `/api/v1/student-fees/${id}`,
+          `/v1/student-fees/${id}`,
           {
             method: "PUT",
             body: input,
@@ -148,7 +142,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
 
       try {
         const { $api } = useNuxtApp();
-        await $api(`/api/v1/student-fees/${id}`, {
+        await $api(`/v1/student-fees/${id}`, {
           method: "DELETE",
         });
 
@@ -172,7 +166,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: StudentFee[] }>(
-          "/api/v1/student-fees/bulk-assign",
+          "/v1/student-fees/bulk-assign",
           {
             method: "POST",
             body: input,
@@ -197,7 +191,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
       try {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: StudentFee[] }>(
-          "/api/v1/student-fees/bulk-update",
+          "/v1/student-fees/bulk-update",
           {
             method: "POST",
             body: input,

@@ -186,15 +186,6 @@ function closeModal() {
   >
     <template #body>
       <div class="space-y-4">
-        <!-- Debug Info (Remove in production) -->
-        <div class="text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded mb-2">
-          <p>Loading: {{ loadingFees }}</p>
-          <p>Available Fees: {{ availableSessionFees.length }}</p>
-          <p>Selected Fees: {{ selectedFees.length }}</p>
-          <p>Session ID: {{ props.academicSessionId }}</p>
-          <p>Grade ID: {{ props.sessionGradeId }}</p>
-        </div>
-
         <div v-if="loadingFees" class="text-center py-4">
           <p class="text-gray-600 dark:text-gray-400">Loading fees...</p>
         </div>

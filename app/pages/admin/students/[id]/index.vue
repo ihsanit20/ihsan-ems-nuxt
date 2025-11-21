@@ -93,16 +93,12 @@ async function deleteFee(feeId: number) {
 }
 
 const currentSessionId = computed(() => {
-  // Get from latest_enrollment (Backend provides this)
   if (student.value?.latest_enrollment?.academic_session_id) {
     return student.value.latest_enrollment.academic_session_id;
   }
-
-  // Fallback to currentEnrollments if available
   if (currentEnrollments.value && currentEnrollments.value.length > 0) {
     return currentEnrollments.value[0]?.academic_session_id || null;
   }
-
   return null;
 });
 
@@ -179,7 +175,6 @@ function getAddressText(address?: any): string {
   const parts: string[] = [];
   if (address.village_house_holding) parts.push(address.village_house_holding);
 
-  // Try to get division/district/area names
   if (address.division_id) {
     const div = addressStore.getDivisionById(address.division_id);
     if (div) parts.push(div.name);
@@ -323,25 +318,25 @@ async function createUserAccount() {
               {
                 label: 'Upload Photo',
                 icon: 'i-heroicons-camera',
-                click: openPhotoUpload,
+                onSelect: openPhotoUpload,
               },
               {
                 label: 'Transfer Student',
                 icon: 'i-heroicons-arrow-right-circle',
-                click: transferStudent,
+                onSelect: transferStudent,
               },
             ],
             [
               {
                 label: 'Create User Account',
                 icon: 'i-heroicons-user-plus',
-                click: () => (createAccountOpen = true),
+                onSelect: () => (createAccountOpen = true),
                 disabled: !!student?.user_id,
               },
               {
                 label: 'Issue TC',
                 icon: 'i-heroicons-document-text',
-                click: () => (issueTCOpen = true),
+                onSelect: () => (issueTCOpen = true),
               },
             ],
           ]"
@@ -642,7 +637,6 @@ async function createUserAccount() {
               </div>
             </div>
 
-            <!-- Total Summary -->
             <div class="border-t pt-3 mt-4 dark:border-gray-700">
               <div class="flex justify-between items-center">
                 <span class="font-semibold text-gray-700 dark:text-gray-300">
@@ -715,116 +709,131 @@ async function createUserAccount() {
       </div>
     </div>
 
-    <!-- Photo Upload Modal -->
+    <!-- ✅ Photo Upload Modal (Levels-style) -->
     <UModal
       :open="photoUploadOpen"
-      @update:open="(val) => (photoUploadOpen = val)"
+      @update:open="photoUploadOpen = $event"
+      title="Upload Photo"
+      description="Choose an image and press Upload."
+      :prevent-close="studentStore.saving"
+      :closeable="!studentStore.saving"
+      :ui="{ footer: 'justify-end' }"
     >
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">Upload Photo</h3>
-        </template>
+      <template #body>
+        <div class="grid gap-4">
+          <input type="file" accept="image/*" @change="onPhotoSelect" />
 
-        <div class="space-y-4">
-          <div>
-            <input type="file" accept="image/*" @change="onPhotoSelect" />
-          </div>
           <div v-if="selectedPhoto" class="text-sm text-gray-600">
             Selected: {{ selectedPhoto.name }}
           </div>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton variant="outline" @click="photoUploadOpen = false">
-              Cancel
-            </UButton>
-            <UButton
-              :disabled="!selectedPhoto"
-              :loading="studentStore.saving"
-              @click="uploadPhoto"
-            >
-              Upload
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          :disabled="studentStore.saving"
+          @click="photoUploadOpen = false"
+        />
+        <UButton
+          label="Upload"
+          color="primary"
+          :disabled="!selectedPhoto"
+          :loading="studentStore.saving"
+          @click="uploadPhoto"
+        />
+      </template>
     </UModal>
 
-    <!-- Issue TC Modal -->
-    <UModal :open="issueTCOpen" @update:open="(val) => (issueTCOpen = val)">
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">Issue Transfer Certificate</h3>
-        </template>
-
-        <div class="space-y-4">
-          <UFormGroup label="Remarks (Optional)">
+    <!-- ✅ Issue TC Modal (Levels-style) -->
+    <UModal
+      :open="issueTCOpen"
+      @update:open="issueTCOpen = $event"
+      title="Issue Transfer Certificate"
+      description="Add remarks if needed and press Issue TC."
+      :prevent-close="studentStore.saving"
+      :closeable="!studentStore.saving"
+      :ui="{ footer: 'justify-end' }"
+    >
+      <template #body>
+        <div class="grid gap-4">
+          <UFormField label="Remarks (Optional)" name="tcRemarks">
             <UTextarea v-model="tcRemarks" placeholder="Enter any remarks..." />
-          </UFormGroup>
+          </UFormField>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton variant="outline" @click="issueTCOpen = false">
-              Cancel
-            </UButton>
-            <UButton
-              color="warning"
-              :loading="studentStore.saving"
-              @click="issueTC"
-            >
-              Issue TC
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          :disabled="studentStore.saving"
+          @click="issueTCOpen = false"
+        />
+        <UButton
+          label="Issue TC"
+          color="warning"
+          :loading="studentStore.saving"
+          @click="issueTC"
+        />
+      </template>
     </UModal>
 
-    <!-- Create Account Modal -->
+    <!-- ✅ Create Account Modal (Levels-style) -->
     <UModal
       :open="createAccountOpen"
-      @update:open="(val) => (createAccountOpen = val)"
+      @update:open="createAccountOpen = $event"
+      title="Create User Account"
+      description="Fill phone/email/password and press Create."
+      :prevent-close="studentStore.saving"
+      :closeable="!studentStore.saving"
+      :ui="{ footer: 'justify-end' }"
     >
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">Create User Account</h3>
-        </template>
-
-        <div class="space-y-4">
-          <UFormGroup label="Phone" required>
+      <template #body>
+        <div class="grid gap-4">
+          <UFormField label="Phone" name="phone" required>
             <UInput
               v-model="accountForm.phone"
               placeholder="Enter phone number"
             />
-          </UFormGroup>
-          <UFormGroup label="Email">
+          </UFormField>
+
+          <UFormField label="Email" name="email">
             <UInput
               v-model="accountForm.email"
               type="email"
               placeholder="Enter email (optional)"
             />
-          </UFormGroup>
-          <UFormGroup label="Password" required>
+          </UFormField>
+
+          <UFormField label="Password" name="password" required>
             <UInput
               v-model="accountForm.password"
               type="password"
               placeholder="Enter password"
             />
-          </UFormGroup>
+          </UFormField>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton variant="outline" @click="createAccountOpen = false">
-              Cancel
-            </UButton>
-            <UButton :loading="studentStore.saving" @click="createUserAccount">
-              Create Account
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          :disabled="studentStore.saving"
+          @click="createAccountOpen = false"
+        />
+        <UButton
+          label="Create Account"
+          color="primary"
+          :loading="studentStore.saving"
+          @click="createUserAccount"
+        />
+      </template>
     </UModal>
 
     <!-- Fee Assign Modal -->

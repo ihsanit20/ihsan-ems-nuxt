@@ -201,32 +201,6 @@ function residentialLabel(r?: ResidentialType | null): string {
 }
 
 /* ---------------- Row Actions ---------------- */
-const feeModalOpen = ref(false);
-const selectedStudentForFee = ref<Student | null>(null);
-
-function getStudentSessionId(student: Student): number {
-  // Get from latest_enrollment (Backend provides this)
-  if (student.latest_enrollment?.academic_session_id) {
-    return student.latest_enrollment.academic_session_id;
-  }
-
-  // Fallback to current filter if any
-  if (academic_session_id.value) return academic_session_id.value;
-
-  // Last resort
-  return 0;
-}
-
-function assignFees(row: Student) {
-  selectedStudentForFee.value = row;
-  feeModalOpen.value = true;
-}
-
-function onFeesSaved() {
-  feeModalOpen.value = false;
-  selectedStudentForFee.value = null;
-}
-
 function viewStudent(row: Student) {
   router.push(`/admin/students/${row.id}`);
 }
@@ -390,6 +364,31 @@ const columns: TableColumn<Student>[] = [
     },
   },
   {
+    id: "details",
+    header: "Details",
+    cell: ({ row }) => {
+      const s = row.original as Student;
+      return h(
+        "div",
+        { class: "flex justify-center" },
+        h(
+          resolveComponent("NuxtLink"),
+          {
+            to: `/admin/students/${s.id}`,
+          },
+          () =>
+            h(UButton as any, {
+              icon: "i-lucide-eye",
+              color: "primary",
+              variant: "soft",
+              size: "xs",
+              label: "View",
+            })
+        )
+      );
+    },
+  },
+  {
     id: "actions",
     header: "",
     cell: ({ row }) => {
@@ -406,11 +405,6 @@ const columns: TableColumn<Student>[] = [
           label: "Edit",
           icon: "i-lucide-pencil",
           onSelect: () => editStudent(s),
-        },
-        {
-          label: "Assign Fees",
-          icon: "i-heroicons-currency-bangladeshi",
-          onSelect: () => assignFees(s),
         },
         { type: "separator" as const },
         {
@@ -632,26 +626,5 @@ async function exportStudents() {
         />
       </template>
     </UModal>
-
-    <!-- Fee Assignment Modal -->
-    <StudentFeeAssignmentModal
-      v-if="selectedStudentForFee"
-      :open="feeModalOpen"
-      :student-id="selectedStudentForFee.id"
-      :student-name="
-        selectedStudentForFee.name_bn ||
-        selectedStudentForFee.name_en ||
-        'Student'
-      "
-      :academic-session-id="getStudentSessionId(selectedStudentForFee)"
-      :session-grade-id="
-        selectedStudentForFee.latest_enrollment?.session_grade_id || null
-      "
-      @close="feeModalOpen = false"
-      @saved="onFeesSaved"
-    />
   </div>
 </template>
-<style scoped>
-/* Add any component-specific styles here if needed */
-</style>
