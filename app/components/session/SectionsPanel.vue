@@ -181,7 +181,8 @@ watch(
     <div class="flex flex-wrap items-center gap-2">
       <!-- ADD modal -->
       <UModal
-        v-model:open="isAddModalOpen"
+        :open="isAddModalOpen"
+        @update:open="(val) => (isAddModalOpen = val)"
         title="Add Section"
         :ui="{ footer: 'justify-end' }"
       >
@@ -291,7 +292,8 @@ watch(
 
               <!-- Edit modal per row -->
               <UModal
-                v-model:open="openEditModals[s.id]"
+                :open="openEditModals[s.id]"
+                @update:open="(val) => (openEditModals[s.id] = val)"
                 :title="`Edit Section #${s.id}`"
                 :ui="{ footer: 'justify-end' }"
               >

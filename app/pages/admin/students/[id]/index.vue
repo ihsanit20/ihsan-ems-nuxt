@@ -718,14 +718,13 @@ async function createUserAccount() {
     <!-- Photo Upload Modal -->
     <UModal
       :open="photoUploadOpen"
-      @update:open="photoUploadOpen = $event"
-      title="Upload Photo"
-      description="Select an image to update the student's profile."
-      :prevent-close="studentStore.saving"
-      :closeable="!studentStore.saving"
-      :ui="{ footer: 'justify-end' }"
+      @update:open="(val) => (photoUploadOpen = val)"
     >
-      <template #body>
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Upload Photo</h3>
+        </template>
+
         <div class="space-y-4">
           <div>
             <input type="file" accept="image/*" @change="onPhotoSelect" />
@@ -734,72 +733,64 @@ async function createUserAccount() {
             Selected: {{ selectedPhoto.name }}
           </div>
         </div>
-      </template>
 
-      <template #footer>
-        <UButton
-          label="Cancel"
-          color="neutral"
-          variant="outline"
-          :disabled="studentStore.saving"
-          @click="photoUploadOpen = false"
-        />
-        <UButton
-          label="Upload"
-          color="primary"
-          :disabled="!selectedPhoto"
-          :loading="studentStore.saving"
-          @click="uploadPhoto"
-        />
-      </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton variant="outline" @click="photoUploadOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              :disabled="!selectedPhoto"
+              :loading="studentStore.saving"
+              @click="uploadPhoto"
+            >
+              Upload
+            </UButton>
+          </div>
+        </template>
+      </UCard>
     </UModal>
 
     <!-- Issue TC Modal -->
-    <UModal
-      :open="issueTCOpen"
-      @update:open="issueTCOpen = $event"
-      title="Issue Transfer Certificate"
-      description="Confirm issuing a TC for this student. Remarks are optional."
-      :prevent-close="studentStore.saving"
-      :closeable="!studentStore.saving"
-      :ui="{ footer: 'justify-end' }"
-    >
-      <template #body>
+    <UModal :open="issueTCOpen" @update:open="(val) => (issueTCOpen = val)">
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Issue Transfer Certificate</h3>
+        </template>
+
         <div class="space-y-4">
           <UFormGroup label="Remarks (Optional)">
             <UTextarea v-model="tcRemarks" placeholder="Enter any remarks..." />
           </UFormGroup>
         </div>
-      </template>
 
-      <template #footer>
-        <UButton
-          label="Cancel"
-          color="neutral"
-          variant="outline"
-          :disabled="studentStore.saving"
-          @click="issueTCOpen = false"
-        />
-        <UButton
-          label="Issue TC"
-          color="warning"
-          :loading="studentStore.saving"
-          @click="issueTC"
-        />
-      </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton variant="outline" @click="issueTCOpen = false">
+              Cancel
+            </UButton>
+            <UButton
+              color="warning"
+              :loading="studentStore.saving"
+              @click="issueTC"
+            >
+              Issue TC
+            </UButton>
+          </div>
+        </template>
+      </UCard>
     </UModal>
 
     <!-- Create Account Modal -->
     <UModal
       :open="createAccountOpen"
-      @update:open="createAccountOpen = $event"
-      title="Create User Account"
-      description="Create a guardian-facing login for this student."
-      :prevent-close="studentStore.saving"
-      :closeable="!studentStore.saving"
-      :ui="{ footer: 'justify-end' }"
+      @update:open="(val) => (createAccountOpen = val)"
     >
-      <template #body>
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Create User Account</h3>
+        </template>
+
         <div class="space-y-4">
           <UFormGroup label="Phone" required>
             <UInput
@@ -822,23 +813,18 @@ async function createUserAccount() {
             />
           </UFormGroup>
         </div>
-      </template>
 
-      <template #footer>
-        <UButton
-          label="Cancel"
-          color="neutral"
-          variant="outline"
-          :disabled="studentStore.saving"
-          @click="createAccountOpen = false"
-        />
-        <UButton
-          label="Create Account"
-          color="primary"
-          :loading="studentStore.saving"
-          @click="createUserAccount"
-        />
-      </template>
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton variant="outline" @click="createAccountOpen = false">
+              Cancel
+            </UButton>
+            <UButton :loading="studentStore.saving" @click="createUserAccount">
+              Create Account
+            </UButton>
+          </div>
+        </template>
+      </UCard>
     </UModal>
 
     <!-- Fee Assign Modal -->
