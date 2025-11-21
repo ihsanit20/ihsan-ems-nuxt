@@ -67,12 +67,34 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: FeeInvoice }>(
+        const response = await $api<FeeInvoice | { data: FeeInvoice }>(
           `/v1/fee-invoices/${id}`
         );
 
-        this.currentFeeInvoice = response.data;
-        return response.data;
+        // API may return either { data: invoice } or bare invoice object; handle both
+        const invoice = (response as any)?.data ?? response;
+
+        // Normalize nested keys (backend returns session_fee, frontend expects sessionFee)
+        const toNumber = (v: any) => (v === null || v === undefined ? 0 : Number(v));
+
+        // Normalize nested keys (backend returns session_fee, frontend expects sessionFee)
+        if (invoice?.items?.length) {
+          invoice.items = invoice.items.map((item: any) => ({
+            ...item,
+            amount: toNumber(item.amount),
+            discount_amount: toNumber(item.discount_amount),
+            net_amount: toNumber(item.net_amount),
+            sessionFee: item.sessionFee ?? item.session_fee ?? item.session_fee,
+          }));
+        }
+
+        // Coerce totals to numbers (backend sends strings)
+        invoice.total_amount = toNumber(invoice.total_amount);
+        invoice.total_discount = toNumber(invoice.total_discount);
+        invoice.payable_amount = toNumber(invoice.payable_amount);
+
+        this.currentFeeInvoice = invoice ?? null;
+        return invoice;
       } catch (error: any) {
         this.error = error.message || "Failed to fetch fee invoice";
         throw error;

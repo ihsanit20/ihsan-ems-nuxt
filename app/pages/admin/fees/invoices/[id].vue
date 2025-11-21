@@ -7,6 +7,7 @@ definePageMeta({
 });
 
 import { useHead, useToast } from "#imports";
+import { computed, h, onMounted, reactive, ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import type { TableColumn } from "@nuxt/ui";
 import type { FeeInvoice, FeeInvoiceItem } from "~/types/models/fee-invoice";
@@ -71,7 +72,7 @@ async function loadPayments() {
 /* ---------------- Invoice Items Table ---------------- */
 const itemColumns: TableColumn<FeeInvoiceItem>[] = [
   {
-    id: "fee_name",
+    id: "sessionFee",
     accessorKey: "sessionFee",
     header: "Fee Name",
     cell: ({ row }) => {
@@ -97,7 +98,7 @@ const itemColumns: TableColumn<FeeInvoiceItem>[] = [
       ),
   },
   {
-    id: "discount",
+    id: "discount_amount",
     accessorKey: "discount_amount",
     header: "Discount",
     cell: ({ row }) =>
@@ -197,8 +198,8 @@ const paymentMethods = [
 function openPaymentModal() {
   if (!invoice.value) return;
 
-  const remainingAmount = invoice.value.payable_amount - totalPaid.value;
-  paymentForm.amount = Math.max(0, remainingAmount);
+  const remaining = remainingAmount.value || 0;
+  paymentForm.amount = Math.max(0, remaining);
   paymentForm.payment_date = new Date().toISOString().split("T")[0];
   paymentForm.method = "cash";
   paymentForm.reference_no = "";
@@ -263,12 +264,12 @@ async function submitPayment() {
 const totalPaid = computed(() => {
   return payments.value
     .filter((p) => p.status === "completed")
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 });
 
 const remainingAmount = computed(() => {
   if (!invoice.value) return 0;
-  return invoice.value.payable_amount - totalPaid.value;
+  return Number(invoice.value.payable_amount || 0) - totalPaid.value;
 });
 
 /* ---------------- Helpers ---------------- */
@@ -350,6 +351,7 @@ function printInvoice() {
         <UButton
           v-if="invoice?.status !== 'paid' && invoice?.status !== 'cancelled'"
           icon="i-lucide-banknote"
+          :disabled="invoiceLoading || !invoice"
           @click="openPaymentModal"
         >
           Record Payment
@@ -492,7 +494,7 @@ function printInvoice() {
                 >Total Amount:</span
               >
               <span class="font-medium">
-                ৳{{ invoice.total_amount.toFixed(2) }}
+                ৳{{ Number(invoice.total_amount || 0).toFixed(2) }}
               </span>
             </div>
             <div class="flex justify-between text-sm">
@@ -500,14 +502,14 @@ function printInvoice() {
                 >Total Discount:</span
               >
               <span class="font-medium text-green-600">
-                -৳{{ invoice.total_discount.toFixed(2) }}
+                -৳{{ Number(invoice.total_discount || 0).toFixed(2) }}
               </span>
             </div>
             <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
               <div class="flex justify-between">
                 <span class="font-semibold">Payable Amount:</span>
                 <span class="font-bold text-lg">
-                  ৳{{ invoice.payable_amount.toFixed(2) }}
+                  ৳{{ Number(invoice.payable_amount || 0).toFixed(2) }}
                 </span>
               </div>
             </div>

@@ -141,6 +141,19 @@ export const usePaymentStore = defineStore("payment", {
 
         return response;
       } catch (error: any) {
+        // Treat 404 as "no payments yet" instead of breaking the page
+        if (error?.status === 404 || error?.response?.status === 404) {
+          this.payments = [];
+          this.pagination = {
+            current_page: 1,
+            last_page: 1,
+            per_page: 15,
+            total: 0,
+          };
+          this.error = null;
+          return [];
+        }
+
         this.error =
           error?.data?.message ||
           error.message ||
