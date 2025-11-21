@@ -32,6 +32,16 @@ const itemsPrimary = computed<NavigationMenuItem[]>(() => [
     exact: true,
   },
 
+  {
+    label: "Fees",
+    icon: "i-lucide-banknote",
+    children: [
+      { label: "Dashboard", to: "/admin/fees" },
+      { label: "Invoices", to: "/admin/fees/invoices" },
+      { label: "Payments", to: "/admin/fees/payments" },
+    ],
+  },
+
   // {
   //   label: "Attendance",
   //   icon: "i-lucide-check-square",

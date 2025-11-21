@@ -34,155 +34,181 @@ export const usePaymentStore = defineStore("payment", {
   }),
 
   actions: {
+    // ✅ Laravel paginate response: { current_page, data: [...], last_page, per_page, total }
     async fetchPayments(filters?: BaseFilters) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<Paginated<Payment>>("/payments", {
-          params: filters,
+        const response = await $api<Paginated<Payment>>("/v1/payments", {
+          query: filters,
         });
 
-        this.payments = response.data;
+        this.payments = response?.data ?? [];
         this.pagination = {
-          current_page: response.current_page,
-          last_page: response.last_page,
-          per_page: response.per_page,
-          total: response.total,
+          current_page: response?.current_page ?? 1,
+          last_page: response?.last_page ?? 1,
+          per_page: response?.per_page ?? filters?.per_page ?? 15,
+          total: response?.total ?? 0,
         };
 
         return response;
       } catch (error: any) {
-        this.error = error.message || "Failed to fetch payments";
+        this.error =
+          error?.data?.message || error.message || "Failed to fetch payments";
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
+    // ✅ show() returns a single Payment object (no data wrapper)
     async fetchPayment(id: number) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: Payment }>(`/payments/${id}`);
+        const response = await $api<Payment>(`/v1/payments/${id}`);
 
-        this.currentPayment = response.data;
-        return response.data;
+        this.currentPayment = response ?? null;
+        return response;
       } catch (error: any) {
-        this.error = error.message || "Failed to fetch payment";
+        this.error =
+          error?.data?.message || error.message || "Failed to fetch payment";
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
+    // ✅ studentPayments() returns plain array (not paginated)
     async fetchStudentPayments(studentId: number, filters?: BaseFilters) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<Paginated<Payment>>(
-          `/students/${studentId}/payments`,
+        const response = await $api<Payment[]>(
+          `/v1/students/${studentId}/payments`,
           {
-            params: filters,
+            query: filters,
           }
         );
 
-        this.payments = response.data;
+        this.payments = response ?? [];
         this.pagination = {
-          current_page: response.current_page,
-          last_page: response.last_page,
-          per_page: response.per_page,
-          total: response.total,
+          current_page: 1,
+          last_page: 1,
+          per_page: this.payments.length || 15,
+          total: this.payments.length,
         };
 
         return response;
       } catch (error: any) {
-        this.error = error.message || "Failed to fetch student payments";
+        this.error =
+          error?.data?.message ||
+          error.message ||
+          "Failed to fetch student payments";
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
+    // ✅ invoicePayments() returns plain array (not paginated)
     async fetchInvoicePayments(invoiceId: number, filters?: BaseFilters) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<Paginated<Payment>>(
-          `/invoices/${invoiceId}/payments`,
+        const response = await $api<Payment[]>(
+          `/v1/fee-invoices/${invoiceId}/payments`,
           {
-            params: filters,
+            query: filters,
           }
         );
 
-        this.payments = response.data;
+        this.payments = response ?? [];
         this.pagination = {
-          current_page: response.current_page,
-          last_page: response.last_page,
-          per_page: response.per_page,
-          total: response.total,
+          current_page: 1,
+          last_page: 1,
+          per_page: this.payments.length || 15,
+          total: this.payments.length,
         };
 
         return response;
       } catch (error: any) {
-        this.error = error.message || "Failed to fetch invoice payments";
+        this.error =
+          error?.data?.message ||
+          error.message ||
+          "Failed to fetch invoice payments";
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
+    // ✅ store() returns { message, data: Payment }
     async createPayment(input: CreatePaymentInput) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: Payment }>("/payments", {
-          method: "POST",
-          body: input,
-        });
+        const response = await $api<{ message: string; data: Payment }>(
+          "/v1/payments",
+          {
+            method: "POST",
+            body: input,
+          }
+        );
 
-        this.payments.unshift(response.data);
-        return response.data;
+        const payment = response?.data;
+        if (payment) this.payments.unshift(payment);
+
+        return payment;
       } catch (error: any) {
-        this.error = error.message || "Failed to create payment";
+        this.error =
+          error?.data?.message || error.message || "Failed to create payment";
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
+    // ✅ update() returns { message, data: Payment }
     async updatePayment(id: number, input: UpdatePaymentInput) {
       this.loading = true;
       this.error = null;
 
       try {
         const { $api } = useNuxtApp();
-        const response = await $api<{ data: Payment }>(`/payments/${id}`, {
-          method: "PUT",
-          body: input,
-        });
+        const response = await $api<{ message: string; data: Payment }>(
+          `/v1/payments/${id}`,
+          {
+            method: "PUT",
+            body: input,
+          }
+        );
+
+        const payment = response?.data;
 
         const index = this.payments.findIndex((p) => p.id === id);
-        if (index !== -1) {
-          this.payments[index] = response.data;
+        if (index !== -1 && payment) {
+          this.payments[index] = payment;
         }
 
         if (this.currentPayment?.id === id) {
-          this.currentPayment = response.data;
+          this.currentPayment = payment;
         }
 
-        return response.data;
+        return payment;
       } catch (error: any) {
-        this.error = error.message || "Failed to update payment";
+        this.error =
+          error?.data?.message || error.message || "Failed to update payment";
         throw error;
       } finally {
         this.loading = false;
@@ -195,17 +221,18 @@ export const usePaymentStore = defineStore("payment", {
 
       try {
         const { $api } = useNuxtApp();
-        await $api(`/payments/${id}`, {
+        await $api(`/v1/payments/${id}`, {
           method: "DELETE",
         });
 
-        this.payments = this.payments.filter((p) => p.id !== id);
+        this.payments = (this.payments ?? []).filter((p) => p.id !== id);
 
         if (this.currentPayment?.id === id) {
           this.currentPayment = null;
         }
       } catch (error: any) {
-        this.error = error.message || "Failed to delete payment";
+        this.error =
+          error?.data?.message || error.message || "Failed to delete payment";
         throw error;
       } finally {
         this.loading = false;
@@ -231,32 +258,26 @@ export const usePaymentStore = defineStore("payment", {
   },
 
   getters: {
-    getPaymentById: (state) => (id: number) => {
-      return state.payments.find((p) => p.id === id);
-    },
+    getPaymentById: (state) => (id: number) =>
+      (state.payments ?? []).find((p) => p.id === id),
 
-    getPaymentsByStudent: (state) => (studentId: number) => {
-      return state.payments.filter((p) => p.student_id === studentId);
-    },
+    getPaymentsByStudent: (state) => (studentId: number) =>
+      (state.payments ?? []).filter((p) => p.student_id === studentId),
 
-    getPaymentsByInvoice: (state) => (invoiceId: number) => {
-      return state.payments.filter((p) => p.fee_invoice_id === invoiceId);
-    },
+    getPaymentsByInvoice: (state) => (invoiceId: number) =>
+      (state.payments ?? []).filter((p) => p.fee_invoice_id === invoiceId),
 
-    getPaymentsByStatus: (state) => (status: Payment["status"]) => {
-      return state.payments.filter((p) => p.status === status);
-    },
+    getPaymentsByStatus: (state) => (status: Payment["status"]) =>
+      (state.payments ?? []).filter((p) => p.status === status),
 
-    getCompletedPayments: (state) => {
-      return state.payments.filter((p) => p.status === "completed");
-    },
+    getCompletedPayments: (state) =>
+      (state.payments ?? []).filter((p) => p.status === "completed"),
 
-    getTotalPaymentAmount: (state) => {
-      return state.payments
+    getTotalPaymentAmount: (state) =>
+      (state.payments ?? [])
         .filter((p) => p.status === "completed")
-        .reduce((sum, p) => sum + p.amount, 0);
-    },
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0),
 
-    hasPayments: (state) => state.payments.length > 0,
+    hasPayments: (state) => (state.payments ?? []).length > 0,
   },
 });
