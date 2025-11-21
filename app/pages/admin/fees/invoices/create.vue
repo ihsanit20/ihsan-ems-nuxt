@@ -10,9 +10,8 @@ import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
 import type {
   CreateFeeInvoiceInput,
-  CreateFeeInvoiceItemInput,
 } from "~/types/models/fee-invoice";
-import type { SessionFee } from "~/types";
+import type { StudentFee } from "~/types/models/student-fee";
 
 useHead({ title: "Create Invoice" });
 
@@ -21,10 +20,10 @@ const router = useRouter();
 
 const invoiceStore = useFeeInvoiceStore();
 const studentStore = useStudentStore();
-const sessionStore = useSessionStore();
-const sessionFeeStore = useSessionFeeStore();
+const studentFeeStore = useStudentFeeStore();
 
 const { loading: invoiceLoading } = storeToRefs(invoiceStore);
+const { dueLoading } = storeToRefs(studentFeeStore);
 
 /* ---------------- Form State ---------------- */
 const form = reactive({
@@ -94,58 +93,60 @@ function selectStudent(student: any) {
   form.student_id = student.id;
   form.academic_session_id =
     student.enrollments?.[0]?.academic_session_id || null;
+  availableDueFees.value = [];
+  form.items = [];
   studentSearchQuery.value =
     student.name_bn || student.name_en || student.student_code;
   studentSearchResults.value = [];
 
-  // Load session fees after student selection
+  // Load due fees after student selection
   if (form.academic_session_id) {
-    loadSessionFees();
+    loadDueFees();
   }
 }
 
-/* ---------------- Session Fees ---------------- */
-const availableSessionFees = ref<SessionFee[]>([]);
-const sessionFeesLoading = ref(false);
+/* ---------------- Due Fees (student-specific) ---------------- */
+const availableDueFees = ref<StudentFee[]>([]);
+
+const getSessionFeeId = (fee: StudentFee) =>
+  fee.session_fee_id || fee.sessionFee?.id || null;
 
 // Filter out already added fees
 const availableFeesToAdd = computed(() => {
-  return availableSessionFees.value.filter(
-    (sessionFee) =>
-      !form.items.some((item) => item.session_fee_id === sessionFee.id)
-  );
+  return availableDueFees.value.filter((dueFee) => {
+    const sessionFeeId = getSessionFeeId(dueFee);
+    if (!sessionFeeId) return false;
+    return !form.items.some((item) => item.session_fee_id === sessionFeeId);
+  });
 });
 
-async function loadSessionFees() {
+async function loadDueFees() {
   if (!form.academic_session_id || !selectedStudent.value) return;
 
-  sessionFeesLoading.value = true;
+  const studentId = form.student_id || selectedStudent.value?.id;
+  if (!studentId) return;
+
   try {
     const gradeId =
       selectedStudent.value.enrollments?.[0]?.sessionGrade?.grade?.id;
 
-    await sessionFeeStore.fetchList({
+    const fees = await studentFeeStore.fetchDueFees(studentId, {
       academic_session_id: form.academic_session_id,
       grade_id: gradeId || undefined,
-      only_active: true,
-      per_page: 100,
     });
 
-    availableSessionFees.value = sessionFeeStore.items;
+    availableDueFees.value = fees || [];
   } catch (e: any) {
     toast.add({
       color: "error",
-      title: "Failed to load fees",
+      title: "Failed to load due fees",
       description: e?.data?.message || e?.message,
     });
-  } finally {
-    sessionFeesLoading.value = false;
   }
 }
 
 /* ---------------- Add Fee Item ---------------- */
 const addFeeOpen = ref(false);
-const selectedSessionFee = ref<SessionFee | null>(null);
 
 async function openAddFee() {
   if (!form.student_id || !form.academic_session_id) {
@@ -157,18 +158,29 @@ async function openAddFee() {
     return;
   }
 
-  // Load fees if not already loaded
-  if (availableSessionFees.value.length === 0) {
-    await loadSessionFees();
-  }
-
+  await loadDueFees();
   addFeeOpen.value = true;
 }
 
-function addFeeToInvoice(sessionFee: SessionFee) {
-  const amount = Number(sessionFee.amount) || 0;
+function addFeeToInvoice(dueFee: StudentFee) {
+  const sessionFeeId = getSessionFeeId(dueFee);
+  if (!sessionFeeId) {
+    toast.add({
+      color: "error",
+      title: "Missing fee reference",
+      description: "This fee is missing its session fee reference.",
+    });
+    return;
+  }
+
+  const amount =
+    Number(
+      dueFee.amount ??
+        dueFee.sessionFee?.amount ??
+        0
+    ) || 0;
   const existingItem = form.items.find(
-    (item) => item.session_fee_id === sessionFee.id
+    (item) => item.session_fee_id === sessionFeeId
   );
 
   if (existingItem) {
@@ -181,8 +193,11 @@ function addFeeToInvoice(sessionFee: SessionFee) {
   }
 
   form.items.push({
-    session_fee_id: sessionFee.id,
-    fee_name: sessionFee.fee?.name || "Fee",
+    session_fee_id: sessionFeeId,
+    fee_name:
+      dueFee.fee_name ||
+      dueFee.sessionFee?.fee?.name ||
+      "Fee",
     amount: amount,
     discount_amount: 0,
     net_amount: amount,
@@ -362,6 +377,9 @@ function goBack() {
                     @click="
                       selectedStudent = null;
                       form.student_id = null;
+                      form.academic_session_id = null;
+                      availableDueFees = [];
+                      form.items = [];
                       studentSearchQuery = '';
                     "
                   />
@@ -541,12 +559,12 @@ function goBack() {
       :ui="{ body: 'max-h-96 overflow-y-auto' }"
     >
       <template #body>
-        <div v-if="sessionFeesLoading" class="text-center py-8">
+        <div v-if="dueLoading" class="text-center py-8">
           <UIcon
             name="i-lucide-loader-2"
             class="h-8 w-8 animate-spin text-primary"
           />
-          <p class="mt-2 text-sm text-gray-500">Loading available fees...</p>
+          <p class="mt-2 text-sm text-gray-500">Loading due fees...</p>
         </div>
 
         <div
@@ -565,34 +583,40 @@ function goBack() {
           <UIcon name="i-lucide-inbox" class="h-12 w-12 mx-auto mb-2" />
           <p class="font-medium">
             {{
-              availableSessionFees.length === 0
-                ? "No fees available"
-                : "All fees added"
+              availableDueFees.length === 0
+                ? "No due fees"
+                : "All due fees added"
             }}
           </p>
           <p class="text-sm mt-1">
             {{
-              availableSessionFees.length === 0
-                ? "No fees found for this student's grade/session"
-                : "All available fees have been added to the invoice"
+              availableDueFees.length === 0
+                ? "No unpaid fees remain for this student"
+                : "All due fees have been added to the invoice"
             }}
           </p>
         </div>
 
         <div v-else class="space-y-2">
           <button
-            v-for="sessionFee in availableFeesToAdd"
-            :key="sessionFee.id"
+            v-for="dueFee in availableFeesToAdd"
+            :key="getSessionFeeId(dueFee) || dueFee.id"
             type="button"
             class="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            @click="addFeeToInvoice(sessionFee)"
+            @click="addFeeToInvoice(dueFee)"
           >
             <div class="flex justify-between items-start">
               <div>
-                <div class="font-medium">{{ sessionFee.fee?.name }}</div>
+                <div class="font-medium">
+                  {{
+                    dueFee.fee_name ||
+                    dueFee.sessionFee?.fee?.name ||
+                    "Fee"
+                  }}
+                </div>
                 <div class="text-sm text-gray-500">
                   {{
-                    sessionFee.fee?.billing_type === "recurring"
+                    dueFee.sessionFee?.fee?.billing_type === "recurring"
                       ? "Recurring"
                       : "One-time"
                   }}
@@ -600,7 +624,13 @@ function goBack() {
               </div>
               <div class="text-right">
                 <div class="font-semibold">
-                  ৳{{ Number(sessionFee.amount).toFixed(2) }}
+                  ৳{{
+                    Number(
+                      dueFee.amount ??
+                        dueFee.sessionFee?.amount ??
+                        0
+                    ).toFixed(2)
+                  }}
                 </div>
               </div>
             </div>

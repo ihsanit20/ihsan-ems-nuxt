@@ -11,6 +11,7 @@ import type { Paginated, BaseFilters } from "~/types/common";
 interface StudentFeeState {
   studentFees: StudentFee[];
   currentStudentFee: StudentFee | null;
+  dueFees: StudentFee[];
   pagination: {
     current_page: number;
     last_page: number;
@@ -18,6 +19,7 @@ interface StudentFeeState {
     total: number;
   };
   loading: boolean;
+  dueLoading: boolean;
   error: string | null;
 }
 
@@ -25,6 +27,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
   state: (): StudentFeeState => ({
     studentFees: [],
     currentStudentFee: null,
+    dueFees: [],
     pagination: {
       current_page: 1,
       last_page: 1,
@@ -32,6 +35,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
       total: 0,
     },
     loading: false,
+    dueLoading: false,
     error: null,
   }),
 
@@ -60,6 +64,40 @@ export const useStudentFeeStore = defineStore("studentFee", {
         throw error;
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchDueFees(studentId: number, filters?: Record<string, any>) {
+      this.dueLoading = true;
+      this.error = null;
+
+      try {
+        const { $api } = useNuxtApp();
+        const response = await $api<StudentFee[]>(
+          `/v1/students/${studentId}/due-fees`,
+          {
+            query: filters,
+          }
+        );
+
+        const normalizeAmount = (fee: StudentFee) => ({
+          ...fee,
+          amount:
+            fee.amount === null || fee.amount === undefined
+              ? fee.amount
+              : Number(fee.amount),
+        });
+
+        this.dueFees = Array.isArray(response)
+          ? response.map(normalizeAmount)
+          : [];
+
+        return this.dueFees;
+      } catch (error: any) {
+        this.error = error.message || "Failed to fetch due fees";
+        throw error;
+      } finally {
+        this.dueLoading = false;
       }
     },
 
@@ -224,6 +262,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
     resetState() {
       this.studentFees = [];
       this.currentStudentFee = null;
+      this.dueFees = [];
       this.pagination = {
         current_page: 1,
         last_page: 1,
@@ -231,6 +270,7 @@ export const useStudentFeeStore = defineStore("studentFee", {
         total: 0,
       };
       this.loading = false;
+      this.dueLoading = false;
       this.error = null;
     },
   },

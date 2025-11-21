@@ -8,6 +8,10 @@ export interface StudentFee {
   amount?: number | null;
   discount_type?: "flat" | "percent" | null;
   discount_value?: number | null;
+  // Due-fee metadata (optional)
+  fee_name?: string | null;
+  period_key?: string | null;
+  last_invoiced_invoice_no?: string | null;
   created_at?: string;
   updated_at?: string;
 
