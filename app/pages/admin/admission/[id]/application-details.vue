@@ -697,7 +697,7 @@ function onFeesSaved() {
       </UModal>
 
       <!-- Fee Assignment Modal -->
-      <AdmissionFeeAssignmentModal
+      <StudentFeeAssignModal
         v-if="current?.admitted_student?.id && current?.academic_session_id"
         :open="feeModalOpen"
         :student-id="current.admitted_student.id"
