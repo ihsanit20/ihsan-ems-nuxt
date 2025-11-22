@@ -6,7 +6,7 @@ definePageMeta({
   roles: ["Guardian", "Owner", "Admin", "Developer"],
 });
 
-import { useHead, useToast } from "#imports";
+import { useHead } from "#imports";
 import type { FeeInvoice } from "~/types/models/fee-invoice";
 import type { AdmissionApplication } from "~/types/models/admission";
 
@@ -14,44 +14,90 @@ useHead({ title: "Guardian Dashboard" });
 
 const auth = useAuthStore();
 const tenantStore = useTenantStore();
-const invoiceStore = useFeeInvoiceStore();
-const admissionStore = useAdmissionApplicationStore();
-const toast = useToast();
 
 const { meta: tenant } = storeToRefs(tenantStore);
-const { feeInvoices, loading: invoiceLoading } = storeToRefs(invoiceStore);
-const {
-  myItems: myApplications,
-  myLoading: applicationsLoading,
-} = storeToRefs(admissionStore);
+const feeInvoices = ref<FeeInvoice[]>([
+  {
+    id: 1,
+    invoice_no: "INV-2025-001",
+    student_id: 101,
+    student: { name_bn: "নুসরাত জাহান", student_code: "STU-2025-101" },
+    invoice_date: "2025-02-01",
+    due_date: "2025-02-10",
+    payable_amount: 4500,
+    total_amount: 4500,
+    total_discount: 0,
+    status: "pending",
+    academic_session_id: 1,
+  },
+  {
+    id: 2,
+    invoice_no: "INV-2025-002",
+    student_id: 202,
+    student: { name_bn: "তাহমিদ রহমান", student_code: "STU-2025-077" },
+    invoice_date: "2025-01-05",
+    due_date: "2025-01-15",
+    payable_amount: 3800,
+    total_amount: 3800,
+    total_discount: 0,
+    status: "partial",
+    academic_session_id: 1,
+  },
+  {
+    id: 3,
+    invoice_no: "INV-2024-215",
+    student_id: 101,
+    student: { name_bn: "নুসরাত জাহান", student_code: "STU-2025-101" },
+    invoice_date: "2024-12-01",
+    due_date: "2024-12-10",
+    payable_amount: 4200,
+    total_amount: 4200,
+    total_discount: 0,
+    status: "paid",
+    academic_session_id: 1,
+  },
+]);
 
-onMounted(async () => {
-  await Promise.allSettled([loadInvoices(), loadApplications()]);
-});
-
-async function loadInvoices() {
-  try {
-    await invoiceStore.fetchFeeInvoices({ per_page: 50 });
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Invoices not available",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
-
-async function loadApplications() {
-  try {
-    await admissionStore.fetchMyApplications();
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Applications not available",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
+const myApplications = ref<AdmissionApplication[]>([
+  {
+    id: 11,
+    application_no: "APP-2025-008",
+    applicant_name: "রাফসান করিম",
+    application_type: "new",
+    academic_session_id: 1,
+    session_grade_id: 4,
+    guardian_type: "father",
+    is_present_same_as_permanent: true,
+    status: "pending",
+    created_at: "2025-02-05",
+    session: { id: 1, name: "সেশন ২০২৫" },
+    session_grade: {
+      id: 4,
+      academic_session_id: 1,
+      grade_id: 6,
+      grade: { id: 6, name: "Grade 6" },
+    },
+  },
+  {
+    id: 12,
+    application_no: "APP-2025-009",
+    applicant_name: "মেহজাবিন সুলতানা",
+    application_type: "new",
+    academic_session_id: 1,
+    session_grade_id: 3,
+    guardian_type: "mother",
+    is_present_same_as_permanent: true,
+    status: "accepted",
+    created_at: "2025-01-18",
+    session: { id: 1, name: "সেশন ২০২৫" },
+    session_grade: {
+      id: 3,
+      academic_session_id: 1,
+      grade_id: 5,
+      grade: { id: 5, name: "Grade 5" },
+    },
+  },
+]);
 
 const guardianName = computed(() => auth.user?.name || "Guardian");
 const instituteName = computed(
@@ -162,16 +208,16 @@ const applicationStats = computed(() => {
   return { pending, accepted, admitted, rejected };
 });
 
-const latestApplications = computed<AdmissionApplication[]>(() => {
-  return (myApplications.value || [])
+const latestApplications = computed<AdmissionApplication[]>(() =>
+  (myApplications.value || [])
     .slice()
     .sort(
       (a, b) =>
         (safeTime(b.created_at || b.application_date) || 0) -
         (safeTime(a.created_at || a.application_date) || 0)
     )
-    .slice(0, 4);
-});
+    .slice(0, 4)
+);
 </script>
 
 <template>
@@ -184,7 +230,11 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
         <div
           class="absolute inset-0 opacity-20"
           style="
-            background-image: radial-gradient(circle at 20% 20%, #fff 2px, transparent 0),
+            background-image: radial-gradient(
+                circle at 20% 20%,
+                #fff 2px,
+                transparent 0
+              ),
               radial-gradient(circle at 80% 0%, #fff 2px, transparent 0);
             background-size: 120px 120px;
           "
@@ -200,13 +250,14 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
             </h1>
             <p class="text-white/80 text-sm sm:text-base max-w-2xl">
               আপনার সন্তানের অগ্রগতি, ফি এবং ভর্তি আবেদন—সবকিছু একসাথে দেখুন।
-              {{ instituteName }} থেকে নতুন আপডেট এই প্যানেলে।
+              {{ instituteName }} থেকে নতুন আপডেট এই প্যানেলে। (ডেমো ডেটা
+              প্রদর্শিত)
             </p>
           </div>
 
           <div class="flex flex-wrap gap-3 pt-2">
             <UButton
-              color="white"
+              color="primary"
               variant="solid"
               icon="i-lucide-banknote"
               to="/guardian/fees"
@@ -214,7 +265,7 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
               ফি ড্যাশবোর্ড
             </UButton>
             <UButton
-              color="white"
+              color="primary"
               variant="soft"
               icon="i-lucide-graduation-cap"
               to="/guardian/admissions/applications"
@@ -246,11 +297,7 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
             </div>
             <div class="flex-1">
               <p class="font-medium">
-                {{
-                  nextDueInvoice
-                    ? "আগামী ফি জমা দিন"
-                    : "কোনো বকেয়া নেই"
-                }}
+                {{ nextDueInvoice ? "আগামী ফি জমা দিন" : "কোনো বকেয়া নেই" }}
               </p>
               <p class="text-sm text-gray-500">
                 {{
@@ -315,7 +362,7 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
                 নতুন কোনো নোটিফিকেশন নেই। স্কুল থেকে মেসেজ এলে এখানে দেখাবে।
               </p>
             </div>
-            <UButton variant="ghost" size="xs" color="neutral"> Refresh </UButton>
+            <UBadge color="info" variant="soft">Demo</UBadge>
           </div>
         </div>
       </UCard>
@@ -392,8 +439,13 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
         <template #header>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">শেষ ৪টি ইনভয়েস</p>
-              <p class="font-semibold">Recent Invoices</p>
+              <div class="flex items-center gap-2">
+                <div>
+                  <p class="text-sm text-gray-500">শেষ ৪টি ইনভয়েস</p>
+                  <p class="font-semibold">Recent Invoices</p>
+                </div>
+                <UBadge color="info" variant="soft">Demo</UBadge>
+              </div>
             </div>
             <UButton
               to="/guardian/fees"
@@ -407,13 +459,7 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
           </div>
         </template>
 
-        <div v-if="invoiceLoading" class="space-y-3">
-          <USkeleton v-for="i in 3" :key="i" class="h-14" />
-        </div>
-        <div
-          v-else-if="recentInvoices.length === 0"
-          class="text-center py-10 text-sm text-gray-500"
-        >
+        <div v-if="recentInvoices.length === 0" class="text-center py-10 text-sm text-gray-500">
           কোনো ইনভয়েস পাওয়া যায়নি।
         </div>
         <div v-else class="divide-y divide-gray-100">
@@ -462,8 +508,13 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
         <template #header>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">ভর্তি আপডেট</p>
-              <p class="font-semibold">Applications</p>
+              <div class="flex items-center gap-2">
+                <div>
+                  <p class="text-sm text-gray-500">ভর্তি আপডেট</p>
+                  <p class="font-semibold">Applications</p>
+                </div>
+                <UBadge color="info" variant="soft">Demo</UBadge>
+              </div>
             </div>
             <UButton
               to="/guardian/admissions/applications"
@@ -476,11 +527,8 @@ const latestApplications = computed<AdmissionApplication[]>(() => {
           </div>
         </template>
 
-        <div v-if="applicationsLoading" class="space-y-3">
-          <USkeleton v-for="i in 3" :key="i" class="h-12" />
-        </div>
         <div
-          v-else-if="latestApplications.length === 0"
+          v-if="latestApplications.length === 0"
           class="text-center py-10 text-sm text-gray-500"
         >
           কোনো আবেদন নেই। নতুন আবেদন শুরু করুন।

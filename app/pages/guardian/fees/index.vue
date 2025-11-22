@@ -6,52 +6,59 @@ definePageMeta({
   roles: ["Guardian", "Owner", "Admin", "Developer"],
 });
 
-import { useHead, useToast } from "#imports";
+import { useHead } from "#imports";
 import { useRouter } from "vue-router";
 import type { TableColumn } from "@nuxt/ui";
+
+useHead({ title: "Fees" });
 
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
 
-useHead({ title: "Fees" });
-
-const toast = useToast();
 const router = useRouter();
 
-const invoiceStore = useFeeInvoiceStore();
-const authStore = useAuthStore();
+const loading = ref(false);
 
-const { loading } = storeToRefs(invoiceStore);
-const { user } = storeToRefs(authStore);
-
-const myInvoices = ref<any[]>([]);
+/* ---------------- Demo data (static) ---------------- */
+const myInvoices = ref<any[]>([
+  {
+    id: 1,
+    invoice_no: "INV-2025-001",
+    student: { name_bn: "নুসরাত জাহান", student_code: "STU-2025-101" },
+    invoice_date: "2025-02-01",
+    due_date: "2025-02-10",
+    payable_amount: 4500,
+    status: "pending",
+  },
+  {
+    id: 2,
+    invoice_no: "INV-2025-002",
+    student: { name_bn: "তাহমিদ রহমান", student_code: "STU-2025-077" },
+    invoice_date: "2025-01-05",
+    due_date: "2025-01-15",
+    payable_amount: 3800,
+    status: "partial",
+  },
+  {
+    id: 3,
+    invoice_no: "INV-2024-215",
+    student: { name_bn: "নুসরাত জাহান", student_code: "STU-2025-101" },
+    invoice_date: "2024-12-01",
+    due_date: "2024-12-10",
+    payable_amount: 4200,
+    status: "paid",
+  },
+]);
 const stats = reactive({
   totalPending: 0,
   totalPaid: 0,
   totalDue: 0,
 });
 
-/* ---------------- Load Guardian's Student Invoices ---------------- */
-onMounted(async () => {
-  await loadMyInvoices();
+/* ---------------- Stats from demo data ---------------- */
+onMounted(() => {
+  calculateStats();
 });
-
-async function loadMyInvoices() {
-  try {
-    // In a real implementation, you'd fetch invoices for all children of this guardian
-    // For now, we'll fetch all invoices (this should be filtered by guardian's students on backend)
-    await invoiceStore.fetchFeeInvoices({ per_page: 100 });
-    myInvoices.value = invoiceStore.feeInvoices;
-
-    calculateStats();
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Failed to load invoices",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
 
 function calculateStats() {
   stats.totalPending = myInvoices.value
@@ -205,7 +212,7 @@ function formatDate(date?: string | null): string {
         Fee Management
       </h1>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        View and manage your children's fee invoices and payments
+        ডেমো ইনভয়েস লিস্ট (স্ট্যাটিক). লাইভ ডেটা সংযোগের আগে প্রিভিউ দেখানো হচ্ছে।
       </p>
     </div>
 
@@ -281,7 +288,10 @@ function formatDate(date?: string | null): string {
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold">Fee Invoices</h3>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-semibold">Fee Invoices</h3>
+            <UBadge color="info" variant="soft">Demo</UBadge>
+          </div>
           <USelect
             v-model="filterStatus"
             :items="statusOptions"
