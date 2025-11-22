@@ -1,3 +1,4 @@
+<!-- pages/public/admission/apply.vue -->
 <script setup lang="ts">
 definePageMeta({ layout: "default" });
 
@@ -25,6 +26,7 @@ async function handleSubmit(payload: any) {
       title: "Submission Failed",
       description:
         error?.data?.message ||
+        error?.message ||
         "Failed to submit application. Please try again.",
       color: "error",
     });
@@ -35,7 +37,6 @@ async function handleSubmit(payload: any) {
 <template>
   <UContainer>
     <div class="mx-auto max-w-3xl">
-      <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold mb-2">Admission Application Form</h1>
         <p class="text-sm text-gray-600">
@@ -44,7 +45,6 @@ async function handleSubmit(payload: any) {
         </p>
       </div>
 
-      <!-- Form -->
       <AdmissionForm
         mode="public"
         :saving="saving"

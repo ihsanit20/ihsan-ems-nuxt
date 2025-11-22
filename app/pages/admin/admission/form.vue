@@ -1,3 +1,4 @@
+<!-- pages/admin/admission/form.vue -->
 <script setup lang="ts">
 definePageMeta({
   layout: "admin",
@@ -42,6 +43,7 @@ async function handleSubmit(payload: any) {
           Record an application received offline.
         </p>
       </div>
+
       <UButton
         color="secondary"
         variant="outline"
