@@ -6,6 +6,8 @@ definePageMeta({
   roles: ["Owner", "Admin", "Developer"],
 });
 
+import { h, ref, reactive, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
 import type { TableColumn } from "@nuxt/ui";
@@ -19,13 +21,12 @@ const toast = useToast();
 const router = useRouter();
 
 const invoiceStore = useFeeInvoiceStore();
-const paymentStore = usePaymentStore();
+const { loading: invoiceLoading, dashboardSummary } = storeToRefs(invoiceStore);
 
-const { loading: invoiceLoading } = storeToRefs(invoiceStore);
-const { loading: paymentLoading } = storeToRefs(paymentStore);
-
+/* ---------------- Local UI State ---------------- */
 const pendingInvoices = ref<any[]>([]);
 const recentPayments = ref<any[]>([]);
+
 const stats = reactive({
   totalInvoices: 0,
   pendingAmount: 0,
@@ -36,76 +37,35 @@ const stats = reactive({
 
 /* ---------------- Load Dashboard Data ---------------- */
 onMounted(async () => {
-  await Promise.all([loadStats(), loadPendingInvoices(), loadRecentPayments()]);
+  await loadDashboard();
 });
 
-async function loadStats() {
+async function loadDashboard() {
   try {
-    // Load all invoices to calculate stats
-    await invoiceStore.fetchFeeInvoices({ per_page: 1000 });
+    const res = await invoiceStore.fetchDashboardSummary({
+      pending_limit: 10,
+      recent_limit: 10,
+      // academic_session_id: optional
+    });
 
-    const invoices = invoiceStore.feeInvoices;
-    stats.totalInvoices = invoices.length;
+    stats.totalInvoices = Number(res.total_invoices || 0);
+    stats.pendingAmount = Number(res.pending_amount || 0);
+    stats.partialAmount = Number(res.partial_amount || 0);
+    stats.paidAmount = Number(res.paid_amount || 0);
+    stats.totalStudentsWithDues = Number(res.students_with_dues || 0);
 
-    stats.pendingAmount = invoices
-      .filter((inv) => inv.status === "pending")
-      .reduce((sum, inv) => sum + inv.payable_amount, 0);
-
-    stats.partialAmount = invoices
-      .filter((inv) => inv.status === "partial")
-      .reduce((sum, inv) => sum + inv.payable_amount, 0);
-
-    stats.paidAmount = invoices
-      .filter((inv) => inv.status === "paid")
-      .reduce((sum, inv) => sum + inv.payable_amount, 0);
-
-    // Count unique students with pending/partial invoices
-    const studentsWithDues = new Set(
-      invoices
-        .filter((inv) => inv.status === "pending" || inv.status === "partial")
-        .map((inv) => inv.student_id)
-    );
-    stats.totalStudentsWithDues = studentsWithDues.size;
+    pendingInvoices.value = res.pending_invoices || [];
+    recentPayments.value = res.recent_payments || [];
   } catch (e: any) {
     toast.add({
       color: "error",
-      title: "Failed to load stats",
+      title: "Failed to load dashboard",
       description: e?.data?.message || e?.message,
     });
   }
 }
 
-async function loadPendingInvoices() {
-  try {
-    await invoiceStore.fetchFeeInvoices({
-      per_page: 10,
-    });
-    pendingInvoices.value = invoiceStore.feeInvoices.slice(0, 10);
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Failed to load pending invoices",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
-
-async function loadRecentPayments() {
-  try {
-    await paymentStore.fetchPayments({
-      per_page: 10,
-    });
-    recentPayments.value = paymentStore.payments.slice(0, 10);
-  } catch (e: any) {
-    toast.add({
-      color: "error",
-      title: "Failed to load payments",
-      description: e?.data?.message || e?.message,
-    });
-  }
-}
-
-/* ---------------- Pending Invoices Columns ---------------- */
+/* ---------------- Tables ---------------- */
 const invoiceColumns: TableColumn<any>[] = [
   {
     id: "invoice_no",
@@ -114,8 +74,11 @@ const invoiceColumns: TableColumn<any>[] = [
     cell: ({ row }) =>
       h(
         "div",
-        { class: "font-medium text-primary" },
-        row.getValue("invoice_no")
+        {
+          class: "font-medium text-primary cursor-pointer",
+          onClick: () => viewInvoice(row.original?.id),
+        },
+        row.getValue("invoice_no") || `#${row.original?.id}`
       ),
   },
   {
@@ -138,6 +101,21 @@ const invoiceColumns: TableColumn<any>[] = [
     cell: ({ row }) => formatDate(row.getValue("due_date") as string),
   },
   {
+    id: "status",
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: invoiceStatusColor(row.getValue("status") as string),
+          variant: "subtle",
+          class: "capitalize",
+        },
+        () => (row.getValue("status") as string) || "unknown"
+      ),
+  },
+  {
     id: "amount",
     accessorKey: "payable_amount",
     header: "Amount",
@@ -145,7 +123,7 @@ const invoiceColumns: TableColumn<any>[] = [
       h(
         "div",
         { class: "text-right font-semibold text-red-600" },
-        `৳${Number(row.getValue("payable_amount") || 0).toFixed(2)}`
+        `৳${Number(row.original?.payable_amount || 0).toFixed(2)}`
       ),
   },
   {
@@ -158,19 +136,27 @@ const invoiceColumns: TableColumn<any>[] = [
         label: "View",
         size: "sm",
         variant: "outline",
-        onClick: () => router.push(`/admin/fees/invoices/${invoice.id}`),
+        onClick: () => viewInvoice(invoice.id),
       });
     },
   },
 ];
 
-/* ---------------- Recent Payments Columns ---------------- */
 const paymentColumns: TableColumn<any>[] = [
   {
     id: "date",
     accessorKey: "payment_date",
     header: "Date",
-    cell: ({ row }) => formatDate(row.getValue("payment_date") as string),
+    cell: ({ row }) => {
+      const raw =
+        (row.getValue("payment_date") as string) ||
+        row.original?.payment_date ||
+        row.original?.paid_at ||
+        row.original?.created_at ||
+        null;
+
+      return formatDate(raw);
+    },
   },
   {
     id: "student",
@@ -189,10 +175,8 @@ const paymentColumns: TableColumn<any>[] = [
     id: "method",
     accessorKey: "method",
     header: "Method",
-    cell: ({ row }) => {
-      const method = row.getValue("method") as string;
-      return h("div", { class: "capitalize" }, method || "—");
-    },
+    cell: ({ row }) =>
+      h("div", { class: "capitalize" }, row.getValue("method") || "—"),
   },
   {
     id: "amount",
@@ -208,6 +192,22 @@ const paymentColumns: TableColumn<any>[] = [
 ];
 
 /* ---------------- Helpers ---------------- */
+function invoiceStatusColor(status?: string) {
+  switch (status) {
+    case "paid":
+      return "success";
+    case "pending":
+      return "warning";
+    case "partial":
+      return "info";
+    case "cancelled":
+    case "failed":
+      return "error";
+    default:
+      return "neutral";
+  }
+}
+
 function formatDate(date?: string | null): string {
   if (!date) return "—";
   try {
@@ -217,8 +217,13 @@ function formatDate(date?: string | null): string {
       year: "numeric",
     });
   } catch {
-    return date;
+    return String(date);
   }
+}
+
+function viewInvoice(invoiceId?: number | null) {
+  if (!invoiceId) return;
+  router.push(`/admin/fees/invoices/${invoiceId}`);
 }
 
 function goBack() {
@@ -453,7 +458,7 @@ function goBack() {
         </div>
       </template>
 
-      <div v-if="paymentLoading" class="text-center py-8">
+      <div v-if="invoiceLoading" class="text-center py-8">
         <UIcon
           name="i-lucide-loader-2"
           class="h-8 w-8 animate-spin text-primary"

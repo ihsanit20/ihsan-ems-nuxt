@@ -7,6 +7,16 @@ import type {
 } from "~/types/models/fee-invoice";
 import type { Paginated, BaseFilters } from "~/types/common";
 
+interface DashboardSummary {
+  total_invoices: number;
+  pending_amount: number;
+  partial_amount: number;
+  paid_amount: number;
+  students_with_dues: number;
+  pending_invoices: FeeInvoice[];
+  recent_payments: any[]; // Payment type if you have it
+}
+
 interface FeeInvoiceState {
   feeInvoices: FeeInvoice[];
   currentFeeInvoice: FeeInvoice | null;
@@ -16,6 +26,7 @@ interface FeeInvoiceState {
     per_page: number;
     total: number;
   };
+  dashboardSummary: DashboardSummary | null;
   loading: boolean;
   error: string | null;
 }
@@ -30,6 +41,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
       per_page: 15,
       total: 0,
     },
+    dashboardSummary: null,
     loading: false,
     error: null,
   }),
@@ -72,13 +84,11 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
           `/v1/fee-invoices/${id}`
         );
 
-        // API may return either { data: invoice } or bare invoice object; handle both
         const invoice = (response as any)?.data ?? response;
 
         const toNumber = (v: any) =>
           v === null || v === undefined ? 0 : Number(v);
 
-        // Normalize nested keys (backend returns snake_case)
         if (invoice?.items?.length) {
           invoice.items = invoice.items.map((item: any) => ({
             ...item,
@@ -102,7 +112,6 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
           }));
         }
 
-        // Coerce totals to numbers (backend sends strings)
         invoice.total_amount = toNumber(invoice.total_amount);
         invoice.total_discount = toNumber(invoice.total_discount);
         invoice.payable_amount = toNumber(invoice.payable_amount);
@@ -125,9 +134,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
         const { $api } = useNuxtApp();
         const response = await $api<Paginated<FeeInvoice>>(
           `/v1/students/${studentId}/invoices`,
-          {
-            query: filters,
-          }
+          { query: filters }
         );
 
         this.feeInvoices = response.data;
@@ -176,16 +183,11 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
         const { $api } = useNuxtApp();
         const response = await $api<{ data: FeeInvoice }>(
           `/v1/fee-invoices/${id}`,
-          {
-            method: "PUT",
-            body: input,
-          }
+          { method: "PUT", body: input }
         );
 
         const index = this.feeInvoices.findIndex((inv) => inv.id === id);
-        if (index !== -1) {
-          this.feeInvoices[index] = response.data;
-        }
+        if (index !== -1) this.feeInvoices[index] = response.data;
 
         if (this.currentFeeInvoice?.id === id) {
           this.currentFeeInvoice = response.data;
@@ -206,9 +208,7 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
       try {
         const { $api } = useNuxtApp();
-        await $api(`/v1/fee-invoices/${id}`, {
-          method: "DELETE",
-        });
+        await $api(`/v1/fee-invoices/${id}`, { method: "DELETE" });
 
         this.feeInvoices = this.feeInvoices.filter((inv) => inv.id !== id);
 
@@ -239,8 +239,36 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
 
         return response;
       } catch (error: any) {
-        this.error =
-          error.message || "Failed to generate monthly fee invoices";
+        this.error = error.message || "Failed to generate monthly fee invoices";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * ✅ NEW: Dashboard Summary fetcher
+     * - stats + pending invoices + recent payments
+     * - does NOT overwrite feeInvoices store
+     */
+    async fetchDashboardSummary(params?: {
+      academic_session_id?: number;
+      recent_limit?: number;
+      pending_limit?: number;
+    }) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const { $api } = useNuxtApp();
+        const res = await $api<DashboardSummary>("/v1/fees/dashboard-summary", {
+          query: params,
+        });
+
+        this.dashboardSummary = res;
+        return res;
+      } catch (error: any) {
+        this.error = error.message || "Failed to fetch dashboard summary";
         throw error;
       } finally {
         this.loading = false;
@@ -260,36 +288,29 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
         per_page: 15,
         total: 0,
       };
+      this.dashboardSummary = null;
       this.loading = false;
       this.error = null;
     },
   },
 
   getters: {
-    getFeeInvoiceById: (state) => (id: number) => {
-      return state.feeInvoices.find((inv) => inv.id === id);
-    },
+    getFeeInvoiceById: (state) => (id: number) =>
+      state.feeInvoices.find((inv) => inv.id === id),
 
-    getFeeInvoicesByStudent: (state) => (studentId: number) => {
-      return state.feeInvoices.filter((inv) => inv.student_id === studentId);
-    },
+    getFeeInvoicesByStudent: (state) => (studentId: number) =>
+      state.feeInvoices.filter((inv) => inv.student_id === studentId),
 
-    getFeeInvoicesByStatus: (state) => (status: FeeInvoice["status"]) => {
-      return state.feeInvoices.filter((inv) => inv.status === status);
-    },
+    getFeeInvoicesByStatus: (state) => (status: FeeInvoice["status"]) =>
+      state.feeInvoices.filter((inv) => inv.status === status),
 
-    getPendingInvoices: (state) => {
-      return state.feeInvoices.filter(
+    getPendingInvoices: (state) =>
+      state.feeInvoices.filter(
         (inv) => inv.status === "pending" || inv.status === "partial"
-      );
-    },
+      ),
 
-    getTotalPayableAmount: (state) => {
-      return state.feeInvoices.reduce(
-        (sum, inv) => sum + inv.payable_amount,
-        0
-      );
-    },
+    getTotalPayableAmount: (state) =>
+      state.feeInvoices.reduce((sum, inv) => sum + inv.payable_amount, 0),
 
     hasFeeInvoices: (state) => state.feeInvoices.length > 0,
   },

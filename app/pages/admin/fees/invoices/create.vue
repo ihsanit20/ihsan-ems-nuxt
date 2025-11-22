@@ -112,6 +112,7 @@ function clearStudentSelection() {
   availableDueFees.value = [];
   form.items = [];
   studentSearchResults.value = [];
+  clearSelectedDueFees();
 
   suppressStudentWatch.value = true;
   studentSearchQuery.value = "";
@@ -129,6 +130,7 @@ function selectStudent(student: any) {
   availableDueFees.value = [];
   form.items = [];
   studentSearchResults.value = [];
+  clearSelectedDueFees();
 
   // ✅ suppress search watch while setting selected text
   suppressStudentWatch.value = true;
@@ -185,6 +187,71 @@ async function loadDueFees() {
   }
 }
 
+/* ---------------- Multi Select (Add Fee Modal) ---------------- */
+const selectedDueFeeIds = ref<number[]>([]);
+
+const isDueFeeSelected = (dueFee: StudentFee) => {
+  const id = getStudentFeeId(dueFee);
+  return !!id && selectedDueFeeIds.value.includes(id);
+};
+
+function toggleDueFeeSelection(dueFee: StudentFee) {
+  const id = getStudentFeeId(dueFee);
+  if (!id) return;
+
+  const i = selectedDueFeeIds.value.indexOf(id);
+  if (i === -1) selectedDueFeeIds.value.push(id);
+  else selectedDueFeeIds.value.splice(i, 1);
+}
+
+function clearSelectedDueFees() {
+  selectedDueFeeIds.value = [];
+}
+
+function buildInvoiceItem(dueFee: StudentFee) {
+  const studentFeeId = getStudentFeeId(dueFee)!;
+
+  const amount =
+    Number(
+      dueFee.amount ??
+        dueFee.sessionFee?.amount ??
+        (dueFee as any).session_fee?.amount ??
+        0
+    ) || 0;
+
+  return {
+    student_fee_id: studentFeeId,
+    fee_name:
+      (dueFee as any).fee_name ||
+      dueFee.sessionFee?.fee?.name ||
+      (dueFee as any).session_fee?.fee?.name ||
+      "Fee",
+    amount,
+    discount_amount: 0,
+    net_amount: amount,
+    description: undefined,
+  };
+}
+
+function addSelectedFeesToInvoice() {
+  if (selectedDueFeeIds.value.length === 0) return;
+
+  selectedDueFeeIds.value.forEach((id) => {
+    const dueFee = availableFeesToAdd.value.find(
+      (f) => getStudentFeeId(f) === id
+    );
+    if (!dueFee) return;
+
+    if (!form.items.some((it) => it.student_fee_id === id)) {
+      form.items.push(buildInvoiceItem(dueFee));
+    }
+  });
+
+  addFeeOpen.value = false;
+  clearSelectedDueFees();
+  recalculateAmounts();
+}
+
 /* ---------------- Add Fee Item ---------------- */
 const addFeeOpen = ref(false);
 
@@ -199,9 +266,11 @@ async function openAddFee() {
   }
 
   await loadDueFees();
+  clearSelectedDueFees();
   addFeeOpen.value = true;
 }
 
+// (keep single-add helper if needed elsewhere)
 function addFeeToInvoice(dueFee: StudentFee) {
   const studentFeeId = getStudentFeeId(dueFee);
   if (!studentFeeId) {
@@ -213,7 +282,13 @@ function addFeeToInvoice(dueFee: StudentFee) {
     return;
   }
 
-  const amount = Number(dueFee.amount ?? dueFee.sessionFee?.amount ?? 0) || 0;
+  const amount =
+    Number(
+      dueFee.amount ??
+        dueFee.sessionFee?.amount ??
+        (dueFee as any).session_fee?.amount ??
+        0
+    ) || 0;
 
   const existingItem = form.items.find(
     (item) => item.student_fee_id === studentFeeId
@@ -228,14 +303,7 @@ function addFeeToInvoice(dueFee: StudentFee) {
     return;
   }
 
-  form.items.push({
-    student_fee_id: studentFeeId,
-    fee_name: dueFee.fee_name || dueFee.sessionFee?.fee?.name || "Fee",
-    amount,
-    discount_amount: 0,
-    net_amount: amount,
-    description: undefined,
-  });
+  form.items.push(buildInvoiceItem(dueFee));
 
   addFeeOpen.value = false;
   recalculateAmounts();
@@ -374,6 +442,7 @@ function goBack() {
                         form.academic_session_id = null;
                         availableDueFees = [];
                         form.items = [];
+                        clearSelectedDueFees();
                       }
                     }
                   "
@@ -635,38 +704,86 @@ function goBack() {
           </p>
         </div>
 
+        <!-- Multi-select list -->
         <div v-else class="space-y-2">
-          <button
+          <div
             v-for="dueFee in availableFeesToAdd"
             :key="getStudentFeeId(dueFee) || dueFee.id"
-            type="button"
-            class="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            @click="addFeeToInvoice(dueFee)"
+            class="w-full p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            :class="
+              isDueFeeSelected(dueFee) ? 'ring-2 ring-primary bg-primary/5' : ''
+            "
+            @click="toggleDueFeeSelection(dueFee)"
           >
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="font-medium">
-                  {{ dueFee.fee_name || dueFee.sessionFee?.fee?.name || "Fee" }}
-                </div>
-                <div class="text-sm text-gray-500">
-                  {{
-                    dueFee.sessionFee?.fee?.billing_type === "recurring"
-                      ? "Recurring"
-                      : "One-time"
-                  }}
+            <div class="flex justify-between items-start gap-3">
+              <div class="flex items-start gap-3">
+                <UCheckbox
+                  :model-value="isDueFeeSelected(dueFee)"
+                  @update:model-value="toggleDueFeeSelection(dueFee)"
+                  @click.stop
+                />
+
+                <div>
+                  <div class="font-medium">
+                    {{
+                      dueFee.sessionFee?.fee?.name ||
+                      (dueFee as any).session_fee?.fee?.name ||
+                      "Fee"
+                    }}
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    {{
+                      (dueFee.sessionFee?.fee?.billing_type ||
+                        (dueFee as any).session_fee?.fee?.billing_type) ===
+                      "recurring"
+                        ? "Recurring"
+                        : "One-time"
+                    }}
+                  </div>
                 </div>
               </div>
+
               <div class="text-right">
                 <div class="font-semibold">
                   ৳{{
                     Number(
-                      dueFee.amount ?? dueFee.sessionFee?.amount ?? 0
+                      dueFee.amount ??
+                        dueFee.sessionFee?.amount ??
+                        (dueFee as any).session_fee?.amount ??
+                        0
                     ).toFixed(2)
                   }}
                 </div>
               </div>
             </div>
-          </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Modal footer -->
+      <template #footer>
+        <div class="flex items-center justify-between w-full gap-2">
+          <div class="text-sm text-gray-500">
+            Selected: <b>{{ selectedDueFeeIds.length }}</b>
+          </div>
+
+          <div class="flex gap-2">
+            <UButton
+              variant="ghost"
+              @click="clearSelectedDueFees"
+              :disabled="selectedDueFeeIds.length === 0"
+            >
+              Clear
+            </UButton>
+
+            <UButton
+              color="primary"
+              @click="addSelectedFeesToInvoice"
+              :disabled="selectedDueFeeIds.length === 0"
+            >
+              Add Selected
+            </UButton>
+          </div>
         </div>
       </template>
     </UModal>
