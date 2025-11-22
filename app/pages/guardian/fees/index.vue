@@ -75,15 +75,15 @@ function calculateStats() {
 }
 
 /* ---------------- Filter ---------------- */
-const filterStatus = ref<string>("");
+const filterStatus = ref<string>("all");
 
 const filteredInvoices = computed(() => {
-  if (!filterStatus.value) return myInvoices.value;
+  if (filterStatus.value === "all") return myInvoices.value;
   return myInvoices.value.filter((inv) => inv.status === filterStatus.value);
 });
 
 const statusOptions = [
-  { label: "All Invoices", value: "" },
+  { label: "All Invoices", value: "all" },
   { label: "Pending", value: "pending" },
   { label: "Partial", value: "partial" },
   { label: "Paid", value: "paid" },
@@ -131,7 +131,7 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => formatDate(row.getValue("due_date") as string),
   },
   {
-    id: "amount",
+    id: "payable_amount",
     accessorKey: "payable_amount",
     header: "Amount",
     cell: ({ row }) =>
