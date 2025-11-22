@@ -6,7 +6,7 @@ definePageMeta({
   roles: ["Owner", "Admin", "Developer"],
 });
 
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useHead, useToast } from "#imports";
 import type { SessionFee, Fee } from "~/types";
@@ -20,6 +20,8 @@ const route = useRoute();
 const sessionStore = useSessionStore();
 const feeStore = useFeeStore();
 const sessionFeeStore = useSessionFeeStore();
+const studentFeeStore = useStudentFeeStore();
+const sessionGradeStore = useSessionGradeStore();
 
 const { loading, saving } = storeToRefs(sessionFeeStore);
 
@@ -315,6 +317,7 @@ onMounted(async () => {
 
     sessionFeeStore.setSession(sessionId.value);
     sessionFeeStore.setPage(1);
+    sessionGradeStore.setSession(sessionId.value);
 
     await Promise.all([
       loadGrades(),
@@ -326,6 +329,7 @@ onMounted(async () => {
           } as any),
       // সব session-fee একসাথে আনতে বড় per_page পাঠালাম
       sessionFeeStore.fetchList({ per_page: 1000 }),
+      sessionGradeStore.fetchList({ per_page: 500 }).catch(() => {}),
     ]);
 
     initLocalRows();
@@ -341,6 +345,294 @@ onMounted(async () => {
 
 function goBack() {
   router.back();
+}
+
+/* ---------- Session-grade map (grade_id -> session_grade_id) ---------- */
+const sessionGradeList = computed(() => {
+  const raw = sessionGradeStore.items as any;
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data)) return raw.data;
+  return [];
+});
+
+const sessionGradeIdMap = computed(() => {
+  const map = new Map<number, number>();
+  sessionGradeList.value.forEach((sg: any) => {
+    if (typeof sg.grade_id === "number" && typeof sg.id === "number") {
+      map.set(sg.grade_id, sg.id);
+    }
+  });
+  return map;
+});
+
+const bulkModalDescription = computed(() =>
+  bulkForm.gradeName
+    ? `Assign the selected fee to all students in ${bulkForm.gradeName} for this session.`
+    : "Assign the selected fee to all students in this session grade."
+);
+
+/* ---------- Bulk assign modal state ---------- */
+type BulkFeeOption = { label: string; value: number; amount: number | null };
+
+const bulkAssignOpen = ref(false);
+const bulkLoadingStudents = ref(false);
+const bulkAssigning = ref(false);
+const bulkStudentIds = ref<number[]>([]);
+const bulkFeeOptions = ref<BulkFeeOption[]>([]);
+
+const bulkForm = reactive<{
+  gradeId: number | null;
+  gradeName: string;
+  sessionGradeId: number | null;
+  sessionFeeId: number | null;
+  amount: string;
+  discount_type: "flat" | "percent" | null;
+  discount_value: number | null;
+}>({
+  gradeId: null,
+  gradeName: "",
+  sessionGradeId: null,
+  sessionFeeId: null,
+  amount: "",
+  discount_type: null,
+  discount_value: null,
+});
+
+const selectedFeeOption = computed(
+  () =>
+    bulkFeeOptions.value.find((o) => o.value === bulkForm.sessionFeeId) || null
+);
+
+const bulkNetAmount = computed(() => {
+  const base = Number(bulkForm.amount);
+  if (!Number.isFinite(base) || base < 0) return 0;
+  if (!bulkForm.discount_type || bulkForm.discount_value === null) return base;
+  if (bulkForm.discount_type === "flat") {
+    return Math.max(0, base - bulkForm.discount_value);
+  }
+  return Math.max(0, base - (base * bulkForm.discount_value) / 100);
+});
+
+watch(
+  () => bulkForm.sessionFeeId,
+  (id) => {
+    if (!id) return;
+    const opt = bulkFeeOptions.value.find((o) => o.value === id);
+    if (opt) {
+      bulkForm.amount =
+        opt.amount === null || typeof opt.amount === "undefined"
+          ? ""
+          : String(opt.amount);
+    }
+    bulkForm.discount_type = null;
+    bulkForm.discount_value = null;
+  }
+);
+
+watch(
+  () => bulkForm.discount_type,
+  (type) => {
+    if (!type) bulkForm.discount_value = null;
+  }
+);
+
+function resetBulkModal() {
+  bulkAssignOpen.value = false;
+  bulkLoadingStudents.value = false;
+  bulkAssigning.value = false;
+  bulkStudentIds.value = [];
+  bulkFeeOptions.value = [];
+  Object.assign(bulkForm, {
+    gradeId: null,
+    gradeName: "",
+    sessionGradeId: null,
+    sessionFeeId: null,
+    amount: "",
+    discount_type: null,
+    discount_value: null,
+  });
+}
+
+function buildFeeOptions(rows: LocalFeeRow[]): BulkFeeOption[] {
+  return rows
+    .filter((row) => row.checked && row.existingId)
+    .map((row) => ({
+      label: row.fee.name,
+      value: row.existingId as number,
+      amount:
+        row.amount === "" ||
+        row.amount === null ||
+        typeof row.amount === "undefined"
+          ? null
+          : Number(row.amount),
+    }));
+}
+
+async function loadStudentsForGrade(sessionGradeId: number) {
+  bulkLoadingStudents.value = true;
+  try {
+    const { $api } = useNuxtApp();
+    const res = await $api<any>("/v1/students", {
+      query: {
+        academic_session_id: sessionId.value,
+        session_grade_id: sessionGradeId,
+        paginate: false,
+        per_page: 5000,
+      },
+    });
+
+    const list = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+      ? (res as any).data
+      : [];
+
+    const ids = list
+      .map((s: any) => Number((s as any)?.id))
+      .filter((id: number) => Number.isFinite(id));
+
+    // dedupe to stay safe
+    bulkStudentIds.value = Array.from(new Set(ids));
+  } catch (e: any) {
+    toast.add({
+      color: "error",
+      title: "Failed to load students",
+      description: e?.data?.message || e?.message || "Could not fetch students",
+    });
+    bulkStudentIds.value = [];
+  } finally {
+    bulkLoadingStudents.value = false;
+  }
+}
+
+async function openBulkAssign(group: {
+  gradeId: number;
+  gradeName: string;
+  rows: LocalFeeRow[];
+}) {
+  const options = buildFeeOptions(group.rows);
+  const sessionGradeId = sessionGradeIdMap.value.get(group.gradeId) ?? null;
+  const first = options[0] || null;
+
+  Object.assign(bulkForm, {
+    gradeId: group.gradeId,
+    gradeName: group.gradeName,
+    sessionGradeId,
+    sessionFeeId: first?.value ?? null,
+    amount:
+      first && first.amount !== null && typeof first.amount !== "undefined"
+        ? String(first.amount)
+        : "",
+    discount_type: null,
+    discount_value: null,
+  });
+
+  bulkFeeOptions.value = options;
+  bulkStudentIds.value = [];
+  bulkAssignOpen.value = true;
+
+  if (!sessionGradeId) {
+    toast.add({
+      color: "warning",
+      title: "Session grade missing",
+      description: "This grade is not opened in this session yet.",
+    });
+    return;
+  }
+
+  if (!options.length) {
+    toast.add({
+      color: "info",
+      title: "No active fees",
+      description: "Enable at least one fee for this grade before bulk assign.",
+    });
+  }
+
+  await loadStudentsForGrade(sessionGradeId);
+}
+
+async function submitBulkAssign() {
+  if (!bulkForm.sessionFeeId) {
+    toast.add({
+      color: "warning",
+      title: "Select a fee",
+      description: "Choose a fee to assign.",
+    });
+    return;
+  }
+
+  if (!bulkForm.sessionGradeId) {
+    toast.add({
+      color: "warning",
+      title: "Missing grade",
+      description: "No grade selected for bulk assign.",
+    });
+    return;
+  }
+
+  if (!bulkStudentIds.value.length) {
+    toast.add({
+      color: "warning",
+      title: "No students found",
+      description: "There are no students in this grade to assign.",
+    });
+    return;
+  }
+
+  const amountNumber =
+    bulkForm.amount === "" ? null : Number.parseFloat(bulkForm.amount);
+  if (
+    amountNumber !== null &&
+    (!Number.isFinite(amountNumber) || amountNumber < 0)
+  ) {
+    toast.add({
+      color: "error",
+      title: "Invalid amount",
+      description: "Amount must be a non-negative number.",
+    });
+    return;
+  }
+
+  if (bulkForm.discount_value !== null && !bulkForm.discount_type) {
+    toast.add({
+      color: "error",
+      title: "Discount type missing",
+      description: "Select a discount type when providing a value.",
+    });
+    return;
+  }
+
+  const payload = {
+    student_ids: bulkStudentIds.value,
+    academic_session_id: sessionId.value,
+    session_fee_id: bulkForm.sessionFeeId,
+    amount:
+      amountNumber === null || Number.isNaN(amountNumber)
+        ? undefined
+        : amountNumber,
+    discount_type: bulkForm.discount_type || undefined,
+    discount_value:
+      bulkForm.discount_value === null ? undefined : bulkForm.discount_value,
+  };
+
+  bulkAssigning.value = true;
+  try {
+    await studentFeeStore.bulkAssignStudentFees(payload);
+    toast.add({
+      color: "success",
+      title: "Fees assigned",
+      description: `${bulkStudentIds.value.length} student(s) updated`,
+    });
+    resetBulkModal();
+  } catch (e: any) {
+    toast.add({
+      color: "error",
+      title: "Bulk assign failed",
+      description: e?.data?.message || e?.message || "Please try again.",
+    });
+  } finally {
+    bulkAssigning.value = false;
+  }
 }
 </script>
 
@@ -432,6 +724,16 @@ function goBack() {
               </p>
             </div>
             <div class="flex items-center gap-2">
+              <UButton
+                size="xs"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-users"
+                :disabled="gradeSavingKey === group.key"
+                @click="openBulkAssign(group)"
+              >
+                Bulk assign
+              </UButton>
               <template v-if="!isGradeEditing(group.key)">
                 <UButton
                   size="xs"
@@ -541,5 +843,141 @@ function goBack() {
         </p>
       </UCard>
     </template>
+
+    <!-- Bulk Assign Modal -->
+    <UModal
+      :open="bulkAssignOpen"
+      @update:open="(v) => !v && resetBulkModal()"
+      title="Bulk assign fees to students"
+      :description="bulkModalDescription"
+      :prevent-close="bulkAssigning"
+      :closeable="!bulkAssigning"
+      :ui="{ footer: 'justify-end' }"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <div
+            class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 bg-neutral-50 dark:bg-neutral-800/60"
+          >
+            <div class="text-sm text-neutral-500">Grade</div>
+            <div class="font-semibold text-neutral-900 dark:text-white">
+              {{ bulkForm.gradeName || "—" }}
+            </div>
+          </div>
+
+          <div
+            class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300"
+          >
+            <UIcon name="i-lucide-users" class="text-neutral-500" />
+            <span v-if="bulkLoadingStudents">Loading students…</span>
+            <span v-else-if="bulkForm.sessionGradeId">
+              {{ bulkStudentIds.length }} student(s) in this grade for the
+              session
+            </span>
+            <span v-else class="text-amber-600 dark:text-amber-400">
+              Session grade not found for this grade in the session
+            </span>
+          </div>
+
+          <UFormField label="Fee" required>
+            <USelect
+              v-model="bulkForm.sessionFeeId"
+              :items="bulkFeeOptions"
+              placeholder="Select fee"
+              :disabled="bulkAssigning"
+              :popper="{ strategy: 'fixed' }"
+            />
+          </UFormField>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <UFormField label="Amount">
+              <UInput
+                v-model="bulkForm.amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Use fee default"
+                :disabled="bulkAssigning"
+              />
+            </UFormField>
+
+            <div class="grid gap-2">
+              <UFormField label="Discount type">
+                <USelect
+                  v-model="bulkForm.discount_type"
+                  :items="[
+                    { label: 'None', value: null },
+                    { label: 'Flat', value: 'flat' },
+                    { label: 'Percent', value: 'percent' },
+                  ]"
+                  :disabled="bulkAssigning"
+                  :popper="{ strategy: 'fixed' }"
+                />
+              </UFormField>
+              <UFormField label="Discount value">
+                <UInput
+                  v-model.number="bulkForm.discount_value"
+                  type="number"
+                  min="0"
+                  :step="bulkForm.discount_type === 'percent' ? '1' : '0.01'"
+                  :placeholder="
+                    bulkForm.discount_type === 'percent'
+                      ? 'e.g. 10 for 10%'
+                      : 'e.g. 500'
+                  "
+                  :disabled="bulkAssigning || !bulkForm.discount_type"
+                />
+              </UFormField>
+            </div>
+          </div>
+
+          <div
+            class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2"
+          >
+            <div class="flex justify-between text-sm">
+              <span class="text-neutral-600 dark:text-neutral-300">
+                Net per student
+              </span>
+              <span class="font-semibold">
+                Tk {{ bulkNetAmount.toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-neutral-600 dark:text-neutral-300">
+                Total for {{ bulkStudentIds.length }} students
+              </span>
+              <span
+                class="font-semibold text-primary-600 dark:text-primary-400"
+              >
+                Tk {{ (bulkNetAmount * bulkStudentIds.length).toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <UButton
+          label="Cancel"
+          variant="outline"
+          color="neutral"
+          :disabled="bulkAssigning"
+          @click="resetBulkModal()"
+        />
+        <UButton
+          label="Assign to students"
+          color="primary"
+          :loading="bulkAssigning"
+          :disabled="
+            bulkAssigning ||
+            bulkLoadingStudents ||
+            !bulkForm.sessionFeeId ||
+            !bulkForm.sessionGradeId ||
+            bulkFeeOptions.length === 0
+          "
+          @click="submitBulkAssign"
+        />
+      </template>
+    </UModal>
   </div>
 </template>
