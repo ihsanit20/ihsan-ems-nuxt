@@ -52,18 +52,12 @@ async function handleSubmit(payload: any) {
       </UButton>
     </div>
 
-    <UCard>
-      <template #header>
-        <h2 class="text-lg font-semibold">Applicant Information</h2>
-      </template>
-
-      <AdmissionForm
-        mode="admin"
-        :saving="saving"
-        submit-label="Create"
-        @submit="handleSubmit"
-        @cancel="router.push('/admin/admission/applications')"
-      />
-    </UCard>
+    <AdmissionForm
+      mode="admin"
+      :saving="saving"
+      submit-label="Create"
+      @submit="handleSubmit"
+      @cancel="router.push('/admin/admission/applications')"
+    />
   </UContainer>
 </template>
