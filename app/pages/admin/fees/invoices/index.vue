@@ -225,6 +225,25 @@ const columns: TableColumn<Row>[] = [
       );
     },
   },
+
+  // ✅ NEW: Details button column (visible)
+  {
+    id: "details",
+    header: "Details",
+    cell: ({ row }) => {
+      const invoice = row.original;
+      return h(UButton, {
+        label: "Details",
+        icon: "i-lucide-eye",
+        size: "xs",
+        color: "primary",
+        variant: "soft",
+        onClick: () => viewInvoice(invoice.id),
+      });
+    },
+  },
+
+  // ✅ Actions dropdown now without "View Details"
   {
     id: "actions",
     accessorKey: "actions",
@@ -236,11 +255,6 @@ const columns: TableColumn<Row>[] = [
         {
           items: [
             [
-              {
-                label: "View Details",
-                icon: "i-lucide-eye",
-                onSelect: () => viewInvoice(invoice.id),
-              },
               {
                 label: "Record Payment",
                 icon: "i-lucide-banknote",

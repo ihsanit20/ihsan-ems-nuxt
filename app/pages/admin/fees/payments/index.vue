@@ -196,6 +196,25 @@ const columns: TableColumn<Row>[] = [
         () => row.getValue("status") || "unknown"
       ),
   },
+
+  // ✅ NEW Receipt column
+  {
+    id: "receipt",
+    header: "Receipt",
+    cell: ({ row }) => {
+      const payment = row.original;
+      return h(UButton, {
+        label: "Receipt",
+        icon: "i-lucide-receipt",
+        size: "xs",
+        color: "primary",
+        variant: "soft",
+        onClick: () => viewReceipt(payment.id),
+      });
+    },
+  },
+
+  // ✅ Actions column (dropdown now without receipt)
   {
     id: "actions",
     header: "Actions",
@@ -211,11 +230,6 @@ const columns: TableColumn<Row>[] = [
                 icon: "i-lucide-file-text",
                 onSelect: () => viewInvoice(payment.fee_invoice_id),
                 disabled: !payment.fee_invoice_id,
-              },
-              {
-                label: "View Receipt",
-                icon: "i-lucide-receipt",
-                onSelect: () => viewReceipt(payment.id),
               },
             ],
             [
@@ -275,11 +289,8 @@ function viewInvoice(invoiceId?: number | null) {
 }
 
 function viewReceipt(paymentId: number) {
-  toast.add({
-    title: "Receipt",
-    description: "Receipt feature coming soon",
-    color: "info",
-  });
+  if (!paymentId) return;
+  router.push(`/admin/fees/payments/${paymentId}/receipt`);
 }
 
 function updateStatus(paymentId: number) {

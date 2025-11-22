@@ -5,13 +5,13 @@
   <ClientOnly>
     <UDashboardGroup unit="px" storage="local" storage-key="admin-shell">
       <!-- Left sidebar -->
-      <LayoutAdminSidebar />
+      <LayoutAdminSidebar class="print:hidden" />
 
       <UDashboardSearch />
 
       <UDashboardPanel id="main">
         <template #header>
-          <LayoutAdminHeader />
+          <LayoutAdminHeader class="print:hidden" />
         </template>
 
         <template #body>

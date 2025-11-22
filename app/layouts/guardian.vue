@@ -4,13 +4,13 @@
   <ClientOnly>
     <UDashboardGroup unit="px" storage="local" storage-key="guardian-shell">
       <!-- Left sidebar -->
-      <LayoutGuardianSidebar />
+      <LayoutGuardianSidebar class="print:hidden" />
 
       <UDashboardSearch />
 
       <UDashboardPanel id="main">
         <template #header>
-          <LayoutGuardianHeader />
+          <LayoutGuardianHeader class="print:hidden" />
         </template>
 
         <template #body>

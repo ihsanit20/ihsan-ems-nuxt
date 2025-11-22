@@ -69,6 +69,11 @@ async function loadPayments() {
   }
 }
 
+function viewReceipt(paymentId?: number | null) {
+  if (!paymentId) return;
+  router.push(`/admin/fees/payments/${paymentId}/receipt`);
+}
+
 /* ---------------- Invoice Items Table ---------------- */
 const itemColumns: TableColumn<FeeInvoiceItem>[] = [
   {
@@ -170,6 +175,23 @@ const paymentColumns: TableColumn<Payment>[] = [
         },
         () => status || "unknown"
       );
+    },
+  },
+
+  // ✅ NEW: Receipt Button Column
+  {
+    id: "receipt",
+    header: "Receipt",
+    cell: ({ row }) => {
+      const payment = row.original;
+      return h(UButton, {
+        label: "Receipt",
+        icon: "i-lucide-receipt",
+        size: "xs",
+        color: "primary",
+        variant: "soft",
+        onClick: () => viewReceipt(payment.id),
+      });
     },
   },
 ];

@@ -142,6 +142,11 @@ const invoiceColumns: TableColumn<any>[] = [
   },
 ];
 
+function viewReceipt(paymentId?: number | null) {
+  if (!paymentId) return;
+  router.push(`/admin/fees/payments/${paymentId}/receipt`);
+}
+
 const paymentColumns: TableColumn<any>[] = [
   {
     id: "date",
@@ -188,6 +193,23 @@ const paymentColumns: TableColumn<any>[] = [
         { class: "text-right font-semibold text-green-600" },
         `৳${Number(row.getValue("amount") || 0).toFixed(2)}`
       ),
+  },
+
+  // ✅ NEW: Receipt Button Column
+  {
+    id: "receipt",
+    header: "Receipt",
+    cell: ({ row }) => {
+      const payment = row.original;
+      return h(UButton, {
+        label: "Receipt",
+        icon: "i-lucide-receipt",
+        size: "xs",
+        color: "primary",
+        variant: "soft",
+        onClick: () => viewReceipt(payment.id),
+      });
+    },
   },
 ];
 
