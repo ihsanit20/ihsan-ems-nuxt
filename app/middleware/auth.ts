@@ -28,21 +28,39 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (
     (auth as any).isAuthenticated ? (auth as any).isAuthenticated : auth.user
   ) {
-    return;
+    // Proceed to role checks below
+  } else {
+    // 4) Try to hydrate session (SSR-safe)
+    try {
+      await auth.fetchMe?.();
+    } catch {
+      /* ignore */
+    }
+
+    if (!auth.user) {
+      const redirect =
+        to.fullPath && to.fullPath !== "/"
+          ? `?redirect=${encodeURIComponent(to.fullPath)}`
+          : "";
+      return navigateTo(`/auth/login${redirect}`);
+    }
   }
 
-  // 4) Try to hydrate session (SSR-safe)
-  try {
-    await auth.fetchMe?.();
-  } catch {
-    /* ignore */
+  const role = auth.user?.role || "";
+  const metaRoles = (to.meta?.roles as string[] | undefined)?.filter(Boolean);
+
+  // 5) Route-level role guard (if page declares roles)
+  if (metaRoles?.length && !metaRoles.includes(role)) {
+    return abortNavigation(
+      createError({ statusCode: 403, statusMessage: "Forbidden" })
+    );
   }
 
-  if (!auth.user) {
-    const redirect =
-      to.fullPath && to.fullPath !== "/"
-        ? `?redirect=${encodeURIComponent(to.fullPath)}`
-        : "";
-    return navigateTo(`/auth/login${redirect}`);
+  // 6) Admin shell hard guard — block guardian/student from admin area
+  const adminRoles = ["Owner", "Admin", "Developer", "Teacher"];
+  if (to.path.startsWith("/admin") && !adminRoles.includes(role)) {
+    return abortNavigation(
+      createError({ statusCode: 403, statusMessage: "Admins only" })
+    );
   }
 });

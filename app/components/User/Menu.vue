@@ -9,29 +9,42 @@ const avatarUrl = computed(() => auth.user?.photo);
 const userInitial = computed(() => (userName.value?.[0] || "P").toUpperCase());
 const role = computed(() => auth.user?.role || "");
 
+const isGuardianRole = computed(() =>
+  ["Guardian", "Owner", "Admin", "Developer"].includes(role.value)
+);
+const isAdminRole = computed(() =>
+  ["Owner", "Admin", "Developer", "Teacher"].includes(role.value)
+);
+
 async function onLogout() {
   await auth.logout?.();
   navigateTo("/auth/login");
 }
 
-const items = computed<DropdownMenuItem[]>(() => [
-  { label: "Home", icon: "i-lucide-home", to: "/" },
-  ...(["Guardian", "Owner", "Developer"].includes(role.value)
-    ? [
-        {
-          label: "Guardian",
-          icon: "i-lucide-shield-check",
-          to: "/guardian/dashboard",
-        },
-      ]
-    : []),
-  {
-    label: "Dashboard",
-    icon: "i-lucide-layout-dashboard",
-    to: "/admin/dashboard",
-  },
-  { label: "Logout", icon: "i-lucide-log-out", onSelect: onLogout },
-]);
+const items = computed<DropdownMenuItem[]>(() => {
+  const list: DropdownMenuItem[] = [
+    { label: "Home", icon: "i-lucide-home", to: "/" },
+  ];
+
+  if (isGuardianRole.value) {
+    list.push({
+      label: "Guardian",
+      icon: "i-lucide-shield-check",
+      to: "/guardian/dashboard",
+    });
+  }
+
+  if (isAdminRole.value) {
+    list.push({
+      label: "Admin",
+      icon: "i-lucide-layout-dashboard",
+      to: "/admin/dashboard",
+    });
+  }
+
+  list.push({ label: "Logout", icon: "i-lucide-log-out", onSelect: onLogout });
+  return list;
+});
 </script>
 
 <template>
@@ -49,7 +62,7 @@ const items = computed<DropdownMenuItem[]>(() => [
       <!-- Left: avatar (mobile+desktop) -->
       <template #leading>
         <UAvatar
-          :src="avatarUrl"
+          :src="avatarUrl ?? undefined"
           :alt="userName"
           :text="!avatarUrl ? userInitial : undefined"
           size="sm"
