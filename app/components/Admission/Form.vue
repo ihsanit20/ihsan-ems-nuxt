@@ -402,7 +402,7 @@ function doSubmit() {
           <UFormField label="Application Type" name="application_type">
             <URadioGroup
               v-model="state.application_type"
-              :options="[
+              :items="[
                 { label: 'New Admission', value: 'new' },
                 { label: 'Re-admission', value: 're_admission' },
               ]"
