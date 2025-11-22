@@ -7,6 +7,7 @@ const auth = useAuthStore();
 const userName = computed(() => auth.user?.name || "Profile");
 const avatarUrl = computed(() => auth.user?.photo);
 const userInitial = computed(() => (userName.value?.[0] || "P").toUpperCase());
+const role = computed(() => auth.user?.role || "");
 
 async function onLogout() {
   await auth.logout?.();
@@ -15,6 +16,15 @@ async function onLogout() {
 
 const items = computed<DropdownMenuItem[]>(() => [
   { label: "Home", icon: "i-lucide-home", to: "/" },
+  ...(["Guardian", "Owner", "Developer"].includes(role.value)
+    ? [
+        {
+          label: "Guardian",
+          icon: "i-lucide-shield-check",
+          to: "/guardian/dashboard",
+        },
+      ]
+    : []),
   {
     label: "Dashboard",
     icon: "i-lucide-layout-dashboard",
