@@ -3,6 +3,7 @@ import type {
   FeeInvoice,
   CreateFeeInvoiceInput,
   UpdateFeeInvoiceInput,
+  MonthlyInvoiceGenerationResult,
 } from "~/types/models/fee-invoice";
 import type { Paginated, BaseFilters } from "~/types/common";
 
@@ -216,6 +217,30 @@ export const useFeeInvoiceStore = defineStore("feeInvoice", {
         }
       } catch (error: any) {
         this.error = error.message || "Failed to delete fee invoice";
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async generateMonthlyInvoices(month?: string) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const { $api } = useNuxtApp();
+        const response = await $api<MonthlyInvoiceGenerationResult>(
+          "/v1/invoices/generate-monthly",
+          {
+            method: "POST",
+            ...(month ? { body: { month } } : {}),
+          }
+        );
+
+        return response;
+      } catch (error: any) {
+        this.error =
+          error.message || "Failed to generate monthly fee invoices";
         throw error;
       } finally {
         this.loading = false;

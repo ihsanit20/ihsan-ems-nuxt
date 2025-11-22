@@ -9,7 +9,10 @@ definePageMeta({
 import { useHead, useToast } from "#imports";
 import { useRouter } from "vue-router";
 import type { TableColumn, SelectItem } from "@nuxt/ui";
-import type { FeeInvoice } from "~/types/models/fee-invoice";
+import type {
+  FeeInvoice,
+  MonthlyInvoiceGenerationResult,
+} from "~/types/models/fee-invoice";
 
 /* ---------------- UI component resolves ---------------- */
 const UButton = resolveComponent("UButton");
@@ -80,6 +83,50 @@ async function loadInvoices() {
       title: "Failed to load invoices",
       description: e?.data?.message || e?.message,
     });
+  }
+}
+
+/* ---------------- Monthly Generation ---------------- */
+const generateOpen = ref(false);
+const generating = ref(false);
+const generationMonth = ref<string>(getDefaultMonthKey());
+const generationResult = ref<MonthlyInvoiceGenerationResult | null>(null);
+
+function getDefaultMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function openGenerateModal() {
+  generationResult.value = null;
+  generationMonth.value = getDefaultMonthKey();
+  generateOpen.value = true;
+}
+
+async function handleGenerateMonthly() {
+  generating.value = true;
+  generationResult.value = null;
+
+  try {
+    const result = await store.generateMonthlyInvoices(
+      generationMonth.value?.trim() || undefined
+    );
+
+    generationResult.value = result;
+    toast.add({
+      title: "Monthly invoices generated",
+      color: "success",
+      description: `Created ${result.created}, skipped ${result.skipped}, failed ${result.failed}`,
+    });
+    await loadInvoices();
+  } catch (e: any) {
+    toast.add({
+      color: "error",
+      title: "Generation failed",
+      description: e?.data?.message || e?.message,
+    });
+  } finally {
+    generating.value = false;
   }
 }
 
@@ -355,6 +402,14 @@ function goBack() {
       </div>
 
       <div class="flex items-center gap-2">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-calendar-plus"
+          @click="openGenerateModal"
+        >
+          Generate Monthly
+        </UButton>
         <UButton icon="i-lucide-plus" @click="createInvoice">
           New Invoice
         </UButton>
@@ -389,6 +444,85 @@ function goBack() {
         />
       </div>
     </UCard>
+
+    <!-- Monthly Generation Modal -->
+    <UModal
+      :open="generateOpen"
+      @update:open="generateOpen = $event"
+      title="Generate Monthly Invoices"
+      description="Create invoices for a selected month."
+      :prevent-close="generating"
+      :closeable="!generating"
+      :ui="{ footer: 'justify-end' }"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            Invoice date will be set to the first day of the month and the due
+            date will be 10 days later. Invoice numbers use INV-YYYY-0001
+            format.
+          </p>
+
+          <div class="space-y-1">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Month (YYYY-MM)
+            </label>
+            <UInput
+              v-model="generationMonth"
+              type="month"
+              placeholder="YYYY-MM"
+            />
+            <p class="text-xs text-gray-500">
+              Leave empty to use the current month.
+            </p>
+          </div>
+
+          <div
+            v-if="generationResult"
+            class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 p-3 text-sm"
+          >
+            <div class="font-semibold">Last run summary</div>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Month</span>
+                <span class="font-medium">{{ generationResult.month }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Created</span>
+                <span class="font-medium text-green-600 dark:text-green-400">
+                  {{ generationResult.created }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Skipped</span>
+                <span class="font-medium">{{ generationResult.skipped }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Failed</span>
+                <span class="font-medium text-red-600 dark:text-red-400">
+                  {{ generationResult.failed }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <UButton
+          label="Close"
+          color="neutral"
+          variant="outline"
+          :disabled="generating"
+          @click="generateOpen = false"
+        />
+        <UButton
+          label="Generate"
+          icon="i-lucide-rotate-ccw"
+          :loading="generating"
+          @click="handleGenerateMonthly"
+        />
+      </template>
+    </UModal>
 
     <!-- Cancel Confirm Modal -->
     <UModal

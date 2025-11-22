@@ -6,6 +6,7 @@ export interface FeeInvoice {
   student_id: number;
   academic_session_id: number;
   invoice_no: string;
+  invoice_month?: string | null;
   invoice_date: string;
   due_date?: string | null;
   total_amount: number;
@@ -40,6 +41,7 @@ export interface FeeInvoiceItem {
 export interface CreateFeeInvoiceInput {
   student_id: number;
   academic_session_id: number;
+  invoice_month?: string | null;
   invoice_date: string;
   due_date?: string | null;
   items: CreateFeeInvoiceItemInput[];
@@ -53,6 +55,7 @@ export interface CreateFeeInvoiceItemInput {
 }
 
 export interface UpdateFeeInvoiceInput {
+  invoice_month?: string | null;
   invoice_date?: string;
   due_date?: string | null;
   status?: 'pending' | 'partial' | 'paid' | 'cancelled';
@@ -65,4 +68,11 @@ export interface UpdateFeeInvoiceItemInput {
   description?: string | null;
   amount?: number;
   discount_amount?: number;
+}
+
+export interface MonthlyInvoiceGenerationResult {
+  month: string;
+  created: number;
+  skipped: number;
+  failed: number;
 }
